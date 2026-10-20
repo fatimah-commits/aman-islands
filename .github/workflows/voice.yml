@@ -1,0 +1,23 @@
+name: Make voices
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['voice/lines.json', 'tools/make_voice.py']
+permissions:
+  contents: write
+jobs:
+  voice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install edge-tts
+      - run: python tools/make_voice.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898900+github-actions[bot]@users.noreply.github.com"
+          git add voice
+          git diff --cached --quiet || git commit -m "Record game voices"
+          git push
