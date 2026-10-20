@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تسجيل أصوات جزر أمان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4efff;--card:#fff;--ink:#2c2650;--soft:#6b6390;--grape:#8a5cff;--good:#1fb88a;--bad:#ff5c7a;--sun:#ffc93c;--line:#e4dcff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Baloo Bhaijaan 2',system-ui,sans-serif;line-height:1.5}
+[hidden]{display:none!important}
+.wrap{max-width:680px;margin:0 auto;padding:20px 16px 120px}
+h1{margin:6px 0 2px;font-size:1.7rem}
+.lead{margin:0 0 14px;color:var(--soft);font-weight:500}
+.tips{background:#fff8e0;border:2px solid #ffe39a;border-radius:16px;padding:10px 14px;margin-bottom:18px;font-weight:500}
+.tips b{display:block}
+.tips ul{margin:4px 0 0;padding-inline-start:20px}
+h2{font-size:1.15rem;margin:22px 0 8px;display:flex;align-items:center;gap:8px}
+h2 .who{background:var(--grape);color:#fff;border-radius:99px;padding:0 12px;font-size:.95rem}
+h2 small{color:var(--soft);font-weight:500;font-size:.9rem}
+.line{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;margin-bottom:10px;transition:border-color .2s}
+.line.done{border-color:var(--good)}
+.line .t{font-size:1.25rem;font-weight:800;margin:0}
+.line .how{color:var(--soft);font-size:.92rem;margin:0 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-weight:700;border:0;border-radius:99px;padding:8px 16px;cursor:pointer;background:#efeaff;color:var(--ink);min-height:44px}
+button.rec{background:var(--grape);color:#fff}
+button.rec.on{background:var(--bad);animation:pulse 1s infinite}
+button:disabled{opacity:.4;cursor:default}
+@keyframes pulse{50%{box-shadow:0 0 0 8px #ff5c7a33}}
+.ok{color:var(--good);font-weight:800;margin-inline-start:auto}
+.bar{position:fixed;inset:auto 0 0 0;background:#fffffff2;border-top:2px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+.bar .in{max-width:680px;margin:0 auto;display:flex;gap:12px;align-items:center}
+.bar .count{font-weight:800;flex:1}
+.bar button{background:var(--good);color:#fff;padding:10px 20px}
+.err{background:#ffe6eb;border:2px solid var(--bad);border-radius:14px;padding:10px 14px;margin-bottom:14px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎙️ أصوات جزر أمان</h1>
+  <p class="lead">سجّلي كل جملة بصوتك، وبعدين نزّليها كلها بملف واحد.</p>
+  <div class="tips"><b>قبل لا تبدين:</b>
+    <ul><li>مكان هادي بدون مكيف أو تلفزيون.</li>
+    <li>الجوال قريب من فمك، شبر تقريباً.</li>
+    <li>اضغطي سجّلي، انتظري ثانية، اقري الجملة، ثم اضغطي وقّفي.</li>
+    <li>ما عجبتك؟ سجّليها مرة ثانية وتنحذف القديمة.</li></ul></div>
+  <div class="err" id="err" hidden></div>
+  <div id="list"></div>
+</div>
+<div class="bar"><div class="in"><span class="count" id="count"></span><button id="dl" disabled>⬇️ نزّلي التسجيلات</button></div></div>
+
+<script>
+/* Each id matches a voice('<id>') call in index.html; the files go to voice/<id>.mp3 */
+const LINES = [
+  ['جزيرة الكنز', 'ريم', 'بنت صغيرة', [
+    ['l1', 'عطيني كلمة المرور حقتك!', 'تطلب بإلحاح']]],
+  ['جزيرة الكنز', 'الثعلبة', 'متنكّرة إنها مديرة اللعبة', [
+    ['l2', 'فزتي بجواهر! أرسلي لي كلمة المرور', 'متحمسة وتحاول تغري']]],
+  ['جزيرة الكنز', 'ماما', 'حنونة وهادية', [
+    ['l3', 'حبيبتي، قولي لي كلمة المرور، أكتبها عندي عشان ما تضيع', 'بهدوء وحنان'],
+    ['p0', 'فخورة فيك يا عمري!', 'فرحانة']]],
+  ['جزيرة الكنز', 'لاعبة مجهولة', 'غريبة', [
+    ['l4', 'عطيني كلمة المرور ولا…!', 'زعلانة ومهددة شوي']]],
+  ['جزيرة الوقت', 'بابا', 'اختياري', [
+    ['p1', 'تعالي نلعب برا مع بعض!', 'مبسوط']]],
+  ['جزيرة الهدايا', 'ماما', 'حنونة وهادية', [
+    ['s1', 'تعالي نشوف مع بعض يا حلوة', 'بلطف'],
+    ['s2', 'شكراً إنك سألتيني يا قلبي', 'ممتنة'],
+    ['p2', 'أحب إنك تسأليني يا عمري!', 'فرحانة']]],
+  ['جبل الأسرار', 'نجمة الألعاب', 'الغريبة', [
+    ['m1', 'هلا! كم عمرك؟ أرسلي لي صورتك', 'لطيفة زيادة عن اللزوم'],
+    ['m3', 'لا تقولين لأهلك عن كلامنا، خليه سر', 'بصوت واطي كأنه سر'],
+    ['m4', 'تعالي بكره للحديقة وبعطيك جواهر', 'تحاول تغري']]],
+  ['جبل الأسرار', 'ليان', 'بنت خالتها', [
+    ['m2', 'متى بتجون بيت جدتي اليوم؟', 'عادي ومبسوطة']]],
+  ['جبل الأسرار', 'ماما', 'حنونة وهادية', [
+    ['m5', 'شكراً يا حبيبتي', 'بحنان']]],
+  ['جبل الأسرار', 'الثعلبة', 'انكشفت', [
+    ['m6', 'هههه! كشفتيني!', 'تضحك ومتفاجئة']]],
+  ['جبل الأسرار', 'بابا', 'اختياري', [
+    ['p3', 'نحبك ونحميك دايماً!', 'حنون']]],
+];
+const $ = s => document.querySelector(s);
+const clips = {};          // id -> Blob
+let stream = null, rec = null, recId = null;
+const TYPE = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/aac', 'audio/ogg;codecs=opus', 'audio/webm']
+  .find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+const ext = t => /mp4|aac/.test(t) ? 'm4a' : /ogg/.test(t) ? 'ogg' : 'webm';
+
+/* keep recordings across a reload */
+let db = null;
+const dbReady = new Promise(ok => { try{ const r = indexedDB.open('amanRec', 1); r.onupgradeneeded = () => r.result.createObjectStore('c'); r.onsuccess = () => { db = r.result; ok(); }; r.onerror = () => ok(); }catch(e){ ok(); } });
+const dbPut = (k, v) => { try{ db && db.transaction('c', 'readwrite').objectStore('c').put(v, k); }catch(e){} };
+const dbAll = () => new Promise(ok => { try{ const out = {}, st = db.transaction('c').objectStore('c'); const c = st.openCursor(); c.onsuccess = () => { const x = c.result; if (x){ out[x.key] = x.value; x.continue(); } else ok(out); }; c.onerror = () => ok({}); }catch(e){ ok({}); } });
+
+function render(){
+  let html = '', last = '';
+  for (const [isl, who, about, lines] of LINES){
+    if (isl !== last){ html += `<h2>${isl}</h2>`; last = isl; }
+    html += `<h2><span class="who">${who}</span><small>${about}</small></h2>`;
+    for (const [id, t, how] of lines) html += `<div class="line" id="L-${id}"><p class="t">${t}</p><p class="how">${how}</p>
+      <div class="row"><button class="rec" data-id="${id}">🎙️ سجّلي</button><button class="play" data-id="${id}" disabled>▶️ اسمعي</button><span class="ok" hidden>✓ تم</span></div></div>`;
+  }
+  $('#list').innerHTML = html;
+  $('#list').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.classList.contains('rec')) toggle(b.dataset.id); else play(b.dataset.id);
+  });
+}
+function refresh(){
+  const all = LINES.flatMap(g => g[3].map(l => l[0]));
+  for (const id of all){
+    const el = $('#L-' + id), has = !!clips[id];
+    el.classList.toggle('done', has); el.querySelector('.play').disabled = !has; el.querySelector('.ok').hidden = !has;
+    const r = el.querySelector('.rec'); r.classList.toggle('on', recId === id);
+    r.textContent = recId === id ? '⏹️ وقّفي' : has ? '🔁 سجّلي مرة ثانية' : '🎙️ سجّلي';
+    r.disabled = !!recId && recId !== id;
+  }
+  const n = all.filter(id => clips[id]).length;
+  $('#count').textContent = `سجّلتي ${n} من ${all.length}`;
+  $('#dl').disabled = !n || !!recId;
+}
+async function toggle(id){
+  if (recId === id){ rec.stop(); return; }
+  try{
+    if (!stream) stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
+  }catch(e){ showErr('ما قدرت أفتح المايك. اسمحي للمتصفح يستخدم المايكروفون وجربي مرة ثانية.'); return; }
+  const parts = [];
+  rec = new MediaRecorder(stream, TYPE ? { mimeType:TYPE } : undefined);
+  rec.ondataavailable = e => { if (e.data.size) parts.push(e.data); };
+  rec.onstop = () => { const blob = new Blob(parts, { type:rec.mimeType || TYPE }); clips[id] = blob; dbPut(id, blob); recId = null; refresh(); play(id); };
+  rec.start(); recId = id; refresh();
+}
+let audio = null;
+function play(id){ if (!clips[id]) return; if (audio) audio.pause(); audio = new Audio(URL.createObjectURL(clips[id])); audio.play().catch(() => {}); }
+function showErr(t){ const e = $('#err'); e.textContent = t; e.hidden = false; }
+/* a plain (uncompressed) zip, so the page needs no library */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u => { let c = 0xffffffff; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+async function makeZip(files){
+  const parts = [], dir = []; let off = 0;
+  for (const [name, blob] of files){
+    const data = new Uint8Array(await blob.arrayBuffer()), nm = new TextEncoder().encode(name), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    [[0, 0x04034b50, 4], [4, 20, 2], [14, crc, 4], [18, data.length, 4], [22, data.length, 4], [26, nm.length, 2]].forEach(([o, v, n]) => n === 4 ? h.setUint32(o, v, true) : h.setUint16(o, v, true));
+    const c = new DataView(new ArrayBuffer(46));
+    [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [16, crc, 4], [20, data.length, 4], [24, data.length, 4], [28, nm.length, 2], [42, off, 4]].forEach(([o, v, n]) => n === 4 ? c.setUint32(o, v, true) : c.setUint16(o, v, true));
+    parts.push(h, nm, data); dir.push(c, nm); off += 30 + nm.length + data.length;
+  }
+  const size = dir.reduce((a, d) => a + d.byteLength, 0), e = new DataView(new ArrayBuffer(22));
+  [[0, 0x06054b50, 4], [8, files.length, 2], [10, files.length, 2], [12, size, 4], [16, off, 4]].forEach(([o, v, n]) => n === 4 ? e.setUint32(o, v, true) : e.setUint16(o, v, true));
+  return new Blob([...parts, ...dir, e], { type:'application/zip' });
+}
+$('#dl').onclick = async () => {
+  const blob = await makeZip(Object.entries(clips).map(([id, b]) => [id + '.' + ext(b.type), b]));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'aman-voices.zip'; document.body.appendChild(a); a.click(); a.remove();
+};
+render();
+if (!window.MediaRecorder) showErr('المتصفح هذا ما يدعم التسجيل. افتحي الصفحة من Safari أو Chrome.');
+dbReady.then(dbAll).then(saved => { Object.assign(clips, saved); refresh(); });
+refresh();
+</script>
+</body>
+</html>

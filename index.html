@@ -361,7 +361,27 @@ function speak(t, force){
   if (VOICE_BUF[f]) return play(VOICE_BUF[f]);
   fetch('voice/' + f).then(r => r.arrayBuffer()).then(d => new Promise((ok, no) => a.decodeAudioData(d, ok, no))).then(buf => { VOICE_BUF[f] = buf; play(buf); }).catch(() => {});
 }
-const hush = () => { try{ if (voiceSrc) voiceSrc.stop(); }catch(e){} voiceSrc = null; };
+const hush = () => { voiceQ = null; try{ if (voiceSrc) voiceSrc.stop(); }catch(e){} voiceSrc = null; };
+/* the characters speak with real recorded voices: voice/<id>.mp3 (see record.html).
+   A line that has no recording simply stays silent. queue=true waits for the current line to end. */
+const REC = {};
+let voiceQ = null;
+function voice(id, queue){
+  const a = ac(); if (!a || !id) return;
+  if (queue && voiceSrc){ voiceQ = id; return; }
+  hush(); spokenLast = id;
+  const play = buf => {
+    if (spokenLast !== id) return;
+    try{ const src = a.createBufferSource(), g = a.createGain(); g.gain.value = 1.2; src.buffer = buf; src.connect(g).connect(a.destination);
+      src.onended = () => { if (voiceSrc !== src) return; voiceSrc = null; const q = voiceQ; voiceQ = null; if (q) voice(q); };
+      src.start(); voiceSrc = src; }catch(e){}
+  };
+  if (REC[id]) return play(REC[id]);
+  if (REC[id] === null) return;
+  fetch('voice/' + id + '.mp3').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(d => new Promise((ok, no) => a.decodeAudioData(d, ok, no)))
+    .then(buf => { REC[id] = buf; play(buf); }).catch(() => { REC[id] = null; });
+}
 
 /* ================= 2D portraits (SVG) ================= */
 const STROKE = 'stroke="#2c2650" stroke-width="3.5" stroke-linejoin="round"';
@@ -1383,6 +1403,7 @@ async function finish(i, stars, rule, parent){
     <button class="btn" id="again">العبي مرة ثانية</button>
     <button class="btn" id="map">الخريطة</button></div></div>`);
   speak(msg.replace('{n}', S.name) + ' تذكّري القاعدة: ' + rule);
+  if (parent) voice('p' + i);
   $('#again').onclick = () => goIsland(i);
   $('#map').onclick = () => showMap();
   if (nextI >= 0) $('#next').onclick = () => goIsland(nextI); else $('#toQuiz').onclick = showQuiz;
@@ -1456,10 +1477,10 @@ function doneNpc(n, ok){ n.L.el.className = 'lbl big ' + (ok ? 'good' : 'bad'); 
 
 /* ================= ISLAND 1: password ================= */
 const L1 = [
-  { who:'reem', name:'ريم – صديقتك', m:() => girl3d(CAST.reem.d3), say:'عطيني كلمة المرور حقتك!', ok:false, g:'برافو! حفظتِ السر 🤐', b:'حتى الصديقة ما تعرفها!' },
-  { who:'foxBoss', name:'"مديرة اللعبة"', m:() => fox3d(true), say:'فزتِ بجواهر! أرسلي كلمة المرور 💎', ok:false, g:'كشفتيها! هذي الثعلبة 🦊', b:'هذي الثعلبة متنكّرة!' },
-  { who:'mom', name:'ماما', m:() => girl3d(CAST.mom.d3), say:'حبيبتي، قولي لي كلمة المرور، أكتبها عندي عشان ما تضيع 💜', ok:true, g:'صح! ماما تحفظها لك 💜', b:'ماما يصير تعرفها 💜' },
-  { who:'hooded', name:'لاعبة_مجهولة', m:() => hooded3d(), say:'عطيني كلمة المرور وإلا…! 😠', ok:false, g:'برافو! وقولي لأهلك', b:'لا! قولي لأهلك على طول' },
+  { who:'reem', name:'ريم – صديقتك', m:() => girl3d(CAST.reem.d3), vid:'l1', say:'عطيني كلمة المرور حقتك!', ok:false, g:'برافو! حفظتِ السر 🤐', b:'حتى الصديقة ما تعرفها!' },
+  { who:'foxBoss', name:'"مديرة اللعبة"', m:() => fox3d(true), vid:'l2', say:'فزتي بجواهر! أرسلي لي كلمة المرور 💎', ok:false, g:'كشفتيها! هذي الثعلبة 🦊', b:'هذي الثعلبة متنكّرة!' },
+  { who:'mom', name:'ماما', m:() => girl3d(CAST.mom.d3), vid:'l3', say:'حبيبتي، قولي لي كلمة المرور، أكتبها عندي عشان ما تضيع 💜', ok:true, g:'صح! ماما تحفظها لك 💜', b:'ماما يصير تعرفها 💜' },
+  { who:'hooded', name:'لاعبة_مجهولة', m:() => hooded3d(), vid:'l4', say:'عطيني كلمة المرور ولا…! 😠', ok:false, g:'برافو! وقولي لأهلك', b:'لا! قولي لأهلك على طول' },
 ];
 async function levelTreasure(){
   const fox = fox3d(); fox.position.set(9, 0, -1); scene.add(fox);
@@ -1494,6 +1515,7 @@ async function levelTreasure(){
     people.push(n);
     n.act = addAct(n.model, 1.8, async () => {
       face(n.model, player.position.x, player.position.z); face(player, n.model.position.x, n.model.position.z);
+      voice(v.vid);
       const c = await ask(v.who, v.name, v.say, ['🤐 لا، سر!', '🔑 أقولها']);
       const ok = (c === 1) === v.ok;
       if (ok) right(); else mistake();
@@ -1659,7 +1681,7 @@ async function levelStore(){
     const fresh = boxes.filter(b => b.alive && b.state === 'new');
     if (!fresh.length) return;
     momCool = 1.5; face(mom, player.position.x, player.position.z);
-    momL.el.textContent = 'تعالي نشوف مع بعض يا حلوة 🔍'; sfx.click();
+    momL.el.textContent = 'تعالي نشوف مع بعض يا حلوة 🔍'; sfx.click(); voice('s1');
     await wait(.9);
     momL.el.textContent = 'ماما 💜';
     fresh.forEach(b => {
@@ -1670,7 +1692,7 @@ async function levelStore(){
         quiet(wait(2).then(() => { if (!b.alive) return; puff(b.g.position, 0xff5c7a); scene.remove(b.g); removeBox(b); }));
       }
     });
-    right('شكراً إنك سألتيني يا قلبي 💜');
+    right('شكراً إنك سألتيني يا قلبي 💜'); voice('s2', true);
   }
   every(dt => {
     momCool -= dt;
@@ -1710,10 +1732,10 @@ async function levelStore(){
 
 /* ================= ISLAND 4: strangers online ================= */
 const MSGS = [
-  { from:'نجمة_الألعاب', who:'hooded', t:'هلا! كم عمرك؟ أرسلي صورتك 😊', ans:['shield', 'tell'], ok:'صح! هذي أشياء خاصة 🛡️', no:'لا! ما نعطي صورنا للغرباء' },
+  { from:'نجمة_الألعاب', who:'hooded', t:'هلا! كم عمرك؟ أرسلي لي صورتك 😊', ans:['shield', 'tell'], ok:'صح! هذي أشياء خاصة 🛡️', no:'لا! ما نعطي صورنا للغرباء' },
   { from:'ليان – بنت خالتك', who:'cousin', friend:true, t:'متى بتجون بيت جدتي اليوم؟', ans:['chat', 'tell'], ok:'صح! ليان تعرفينها 💗', no:'ليان قريبتك، ردي عادي!' },
   { from:'نجمة_الألعاب', who:'hooded', t:'لا تقولين لأهلك عن كلامنا، خليه سر 🤫', ans:['tell'], ok:'صح! قولي لأهلك 🏠', no:'لازم تقولين لأهلك!' },
-  { from:'نجمة_الألعاب', who:'hooded', t:'تعالي بكرة الحديقة وأعطيك جواهر 🎁', ans:['tell'], ok:'صح! ما نقابل غرباء أبداً', no:'خطر! قولي لأهلك 🏠' },
+  { from:'نجمة_الألعاب', who:'hooded', t:'تعالي بكره للحديقة وبعطيك جواهر 🎁', ans:['tell'], ok:'صح! ما نقابل غرباء أبداً', no:'خطر! قولي لأهلك 🏠' },
 ];
 const PADS4 = { shield:{ t:'🛡️ ما أشارك', c:0x4f8df5, ico:'shield', x:-5.5 }, tell:{ t:'🏠 أقول لأهلي', c:0x8a5cff, ico:'home', x:0 }, chat:{ t:'💬 أرد عادي', c:0x1fb88a, ico:'chat', x:5.5 } };
 async function levelMountain(){
@@ -1742,6 +1764,7 @@ async function levelMountain(){
     scene.remove(env); sfx.pop(); busy = false;
     mission(m.friend ? '💗' : '✉️', `<small>رسالة من ${esc(m.from)}</small>"${esc(m.t)}"`, i + 1, MSGS.length);
     speak(`رسالة من ${m.from}: ${m.t}. امشي للمنصة الصح.`);
+    voice('m' + (i + 1));
     let ok = false, picked = null;
     while (!ok){
       let on = null;
@@ -1757,7 +1780,7 @@ async function levelMountain(){
     if (picked === 'tell'){
       const mama = girl3d(CAST.mom.d3); mama.position.set(-1.6, 0, 2.6); scene.add(mama); puff(mama.position, 0x8a5cff, 8); face(mama, player.position.x, player.position.z);
       quiet(wait(1.8).then(() => { puff(mama.position, 0x8a5cff, 8); scene.remove(mama); }));
-      label(mama, '💜 شكراً يا حبيبتي', 'good big', 2.6);
+      label(mama, '💜 شكراً يا حبيبتي', 'good big', 2.6); voice('m5');
     }
     if (m.friend){ await wait(.6); puff(cousin.position, 0xff8fc8, 8); cousin.visible = false; }
     await autoWalk(0, 6);
@@ -1768,7 +1791,7 @@ async function levelMountain(){
   puff(str.position, 0x6a5e8a, 16); sfx.bad();
   scene.remove(str); unlabel(strL);
   const fx = fox3d(); fx.position.set(0, top, -8); scene.add(fx); face(fx, 0, 6);
-  const fL = label(fx, '🦊 هههه! كشفتيني!', 'bad big', 2.4);
+  const fL = label(fx, '🦊 هههه! كشفتيني!', 'bad big', 2.4); voice('m6');
   await wait(1.8);
   sfx.whoosh(); unlabel(fL);
   await tween(1.2, e => { fx.position.set(0, top + e * 9, -8 - e * 22); fx.rotation.x = e * 12; fx.rotation.z = e * 8; });
