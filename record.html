@@ -23,7 +23,8 @@ h2 small{color:var(--soft);font-weight:500;font-size:.9rem}
 .line{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;margin-bottom:10px;transition:border-color .2s}
 .line.done{border-color:var(--good)}
 .line .t{font-size:1.25rem;font-weight:800;margin:0}
-.line .how{color:var(--soft);font-size:.92rem;margin:0 0 8px}
+.line .how{color:var(--soft);font-size:.92rem;margin:0}
+.line .row{margin-top:8px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 button{font:inherit;font-weight:700;border:0;border-radius:99px;padding:8px 16px;cursor:pointer;background:#efeaff;color:var(--ink);min-height:44px}
 button.rec{background:var(--grape);color:#fff}
@@ -52,37 +53,9 @@ button:disabled{opacity:.4;cursor:default}
 </div>
 <div class="bar"><div class="in"><span class="count" id="count"></span><button id="dl" disabled>⬇️ نزّلي التسجيلات</button></div></div>
 
+<script src="lines.js"></script>
 <script>
-/* Each id matches a voice('<id>') call in index.html; the files go to voice/<id>.mp3 */
-const LINES = [
-  ['جزيرة الكنز', 'ريم', 'بنت صغيرة', [
-    ['l1', 'عطيني كلمة المرور حقتك!', 'تطلب بإلحاح']]],
-  ['جزيرة الكنز', 'الثعلبة', 'متنكّرة إنها مديرة اللعبة', [
-    ['l2', 'فزتي بجواهر! أرسلي لي كلمة المرور', 'متحمسة وتحاول تغري']]],
-  ['جزيرة الكنز', 'ماما', 'حنونة وهادية', [
-    ['l3', 'حبيبتي، قولي لي كلمة المرور، أكتبها عندي عشان ما تضيع', 'بهدوء وحنان'],
-    ['p0', 'فخورة فيك يا عمري!', 'فرحانة']]],
-  ['جزيرة الكنز', 'لاعبة مجهولة', 'غريبة', [
-    ['l4', 'عطيني كلمة المرور ولا…!', 'زعلانة ومهددة شوي']]],
-  ['جزيرة الوقت', 'بابا', 'اختياري', [
-    ['p1', 'تعالي نلعب برا مع بعض!', 'مبسوط']]],
-  ['جزيرة الهدايا', 'ماما', 'حنونة وهادية', [
-    ['s1', 'تعالي نشوف مع بعض يا حلوة', 'بلطف'],
-    ['s2', 'شكراً إنك سألتيني يا قلبي', 'ممتنة'],
-    ['p2', 'أحب إنك تسأليني يا عمري!', 'فرحانة']]],
-  ['جبل الأسرار', 'نجمة الألعاب', 'الغريبة', [
-    ['m1', 'هلا! كم عمرك؟ أرسلي لي صورتك', 'لطيفة زيادة عن اللزوم'],
-    ['m3', 'لا تقولين لأهلك عن كلامنا، خليه سر', 'بصوت واطي كأنه سر'],
-    ['m4', 'تعالي بكره للحديقة وبعطيك جواهر', 'تحاول تغري']]],
-  ['جبل الأسرار', 'ليان', 'بنت خالتها', [
-    ['m2', 'متى بتجون بيت جدتي اليوم؟', 'عادي ومبسوطة']]],
-  ['جبل الأسرار', 'ماما', 'حنونة وهادية', [
-    ['m5', 'شكراً يا حبيبتي', 'بحنان']]],
-  ['جبل الأسرار', 'الثعلبة', 'انكشفت', [
-    ['m6', 'هههه! كشفتيني!', 'تضحك ومتفاجئة']]],
-  ['جبل الأسرار', 'بابا', 'اختياري', [
-    ['p3', 'نحبك ونحميك دايماً!', 'حنون']]],
-];
+const LINES = window.VOICE_LINES;
 const $ = s => document.querySelector(s);
 const clips = {};          // id -> Blob
 let stream = null, rec = null, recId = null;
@@ -101,7 +74,7 @@ function render(){
   for (const [isl, who, about, lines] of LINES){
     if (isl !== last){ html += `<h2>${isl}</h2>`; last = isl; }
     html += `<h2><span class="who">${who}</span><small>${about}</small></h2>`;
-    for (const [id, t, how] of lines) html += `<div class="line" id="L-${id}"><p class="t">${t}</p><p class="how">${how}</p>
+    for (const [id, t, how] of lines) html += `<div class="line" id="L-${id}"><p class="t">${t}</p>${how ? `<p class="how">${how}</p>` : ''}
       <div class="row"><button class="rec" data-id="${id}">🎙️ سجّلي</button><button class="play" data-id="${id}" disabled>▶️ اسمعي</button><span class="ok" hidden>✓ تم</span></div></div>`;
   }
   $('#list').innerHTML = html;

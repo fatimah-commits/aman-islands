@@ -273,6 +273,7 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
 <div id="loading">جاري تجهيز الجزر...</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="lines.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -339,48 +340,42 @@ function startMusic(){
 }
 /* read aloud for girls who can't read yet (needs an Arabic voice on the device) */
 let spokenLast = '';
-/* read aloud with recorded natural voices: voice/manifest.json maps each sentence to an mp3.
-   The sentence is normalised (no emoji, no symbols, no player name) so one file serves every player. */
-let VOICE = null, voiceSrc = null;
-const VOICE_BUF = {};
+let voiceSrc = null;
 const reEsc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function norm(t){
   let k = String(t).replace(/<[^>]+>/g, ' ').replace(/_/g, ' ').replace(/[^\u0600-\u06FF\s\d.,!؟?،:]/g, ' ');
   if (S.name) k = k.replace(new RegExp('\\s*(يا\\s+)?' + reEsc(S.name), 'g'), '');
   return k.replace(/([!؟?.،,])\1+/g, '$1').replace(/\s+([!؟?.،,:])/g, '$1').replace(/\s+/g, ' ').trim();
 }
-function speak(t, force){
-  return; // read-aloud is off: text is written, natural sounds stay
-  if (!S.voice && !force) return;
-  const key = norm(t); if (!key) return;
-  spokenLast = key;
-  const f = VOICE && VOICE[key]; if (!f) return;
-  const a = ac(); if (!a) return;
-  hush();
-  const play = buf => { if (spokenLast !== key) return; try{ const s = a.createBufferSource(), g = a.createGain(); g.gain.value = 1.1; s.buffer = buf; s.connect(g).connect(a.destination); s.start(); voiceSrc = s; }catch(e){} };
-  if (VOICE_BUF[f]) return play(VOICE_BUF[f]);
-  fetch('voice/' + f).then(r => r.arrayBuffer()).then(d => new Promise((ok, no) => a.decodeAudioData(d, ok, no))).then(buf => { VOICE_BUF[f] = buf; play(buf); }).catch(() => {});
+/* any shown text that has a recording in lines.js is played in that voice; the rest stays silent */
+let SAY_ID = null;
+function speak(t){
+  if (!SAY_ID){ SAY_ID = {}; (window.VOICE_LINES || []).forEach(g => g[3].forEach(([id, txt]) => { SAY_ID[norm(txt)] = id; })); }
+  const id = SAY_ID[norm(t)]; if (id) voice(id);
 }
 const hush = () => { voiceQ = null; try{ if (voiceSrc) voiceSrc.stop(); }catch(e){} voiceSrc = null; };
 /* the characters speak with real recorded voices: voice/<id>.mp3 (see record.html).
    A line that has no recording simply stays silent. queue=true waits for the current line to end. */
 const REC = {};
-let voiceQ = null;
+let voiceQ = null, voiceWait = null;
 function voice(id, queue){
   const a = ac(); if (!a || !id) return;
-  if (queue && voiceSrc){ voiceQ = id; return; }
-  hush(); spokenLast = id;
+  if (queue && (voiceSrc || voiceWait)){ voiceQ = id; return; }
+  if (voiceSrc && spokenLast === id) return;
+  hush(); spokenLast = id; voiceWait = id;
   const play = buf => {
-    if (spokenLast !== id) return;
-    try{ const src = a.createBufferSource(), g = a.createGain(); g.gain.value = 1.2; src.buffer = buf; src.connect(g).connect(a.destination);
+    if (!buf || spokenLast !== id || (voiceSrc && voiceSrc.id === id)) return;
+    try{ const src = a.createBufferSource(), g = a.createGain(); g.gain.value = 1.2; src.buffer = buf; src.id = id; src.connect(g).connect(a.destination);
       src.onended = () => { if (voiceSrc !== src) return; voiceSrc = null; const q = voiceQ; voiceQ = null; if (q) voice(q); };
       src.start(); voiceSrc = src; }catch(e){}
   };
-  if (REC[id]) return play(REC[id]);
-  if (REC[id] === null) return;
-  fetch('voice/' + id + '.mp3').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
-    .then(d => new Promise((ok, no) => a.decodeAudioData(d, ok, no)))
-    .then(buf => { REC[id] = buf; play(buf); }).catch(() => { REC[id] = null; });
+  if (!(id in REC)) REC[id] = fetch('voice/' + id + '.mp3').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(d => new Promise((ok, no) => a.decodeAudioData(d, ok, no))).catch(() => null);
+  REC[id].then(buf => {
+    if (voiceWait === id) voiceWait = null;
+    if (buf) return play(buf);
+    if (spokenLast === id && voiceQ){ const q = voiceQ; voiceQ = null; voice(q); }
+  });
 }
 
 /* ================= 2D portraits (SVG) ================= */
@@ -1402,8 +1397,8 @@ async function finish(i, stars, rule, parent){
     ${nextI >= 0 ? `<button class="btn go big" id="next">الجزيرة رقم ${NUM[nextI]} ${ISL[nextI].icon} ←</button>` : `<button class="btn go big" id="toQuiz">🧩 تحدي المراجعة</button>`}
     <button class="btn" id="again">العبي مرة ثانية</button>
     <button class="btn" id="map">الخريطة</button></div></div>`);
-  speak(msg.replace('{n}', S.name) + ' تذكّري القاعدة: ' + rule);
-  if (parent) voice('p' + i);
+  speak('تذكّري القاعدة: ' + rule);
+  if (parent) voice('p' + i, true);
   $('#again').onclick = () => goIsland(i);
   $('#map').onclick = () => showMap();
   if (nextI >= 0) $('#next').onclick = () => goIsland(nextI); else $('#toQuiz').onclick = showQuiz;
