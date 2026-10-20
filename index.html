@@ -338,15 +338,27 @@ function startMusic(){
 }
 /* read aloud for girls who can't read yet (needs an Arabic voice on the device) */
 let spokenLast = '';
+/* pick the most natural Arabic voice the device has: enhanced/premium/neural voices first, Saudi Arabic preferred */
+let bestVoice = null;
+function pickVoice(){
+  try{
+    const vs = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('ar'));
+    const score = v => (/enhanced|premium|neural|natural|siri|online|wavenet/i.test(v.name) ? 10 : 0) + (/ar[-_]sa/i.test(v.lang) ? 3 : 0) + (/female|laila|hala|zariyah|salma|mariam|amira/i.test(v.name) ? 2 : 0) + (v.localService ? 0 : 1);
+    bestVoice = vs.sort((x, y) => score(y) - score(x))[0] || null;
+  }catch(e){}
+}
+try{ pickVoice(); speechSynthesis.addEventListener('voiceschanged', pickVoice); }catch(e){}
 function speak(t, force){
   if (!S.voice && !force) return;
   try{
-    const clean = t.replace(/<[^>]+>/g, ' ').replace(/[^؀-ۿ\s\d.,!؟?،:]/g, ' ').replace(/\s+/g, ' ').trim();
+    // read words only: drop emoji, symbols and underscores, keep natural pauses at punctuation
+    const clean = t.replace(/<[^>]+>/g, ' ').replace(/_/g, ' ').replace(/[^\u0600-\u06FF\s\d.,!؟?،:]/g, ' ').replace(/([!؟?.،,])\1+/g, '$1').replace(/\s+/g, ' ').trim();
     if (!clean) return;
     speechSynthesis.cancel();
+    if (!bestVoice) pickVoice();
     const u = new SpeechSynthesisUtterance(clean);
-    u.lang = 'ar-SA'; u.rate = .88; u.pitch = 1.15;
-    const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith('ar')); if (v) u.voice = v;
+    u.lang = bestVoice ? bestVoice.lang : 'ar-SA'; if (bestVoice) u.voice = bestVoice;
+    u.rate = .95; u.pitch = 1; u.volume = 1;
     speechSynthesis.speak(u); spokenLast = clean;
   }catch(e){}
 }
