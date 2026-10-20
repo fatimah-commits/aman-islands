@@ -20,6 +20,7 @@
 html,body{height:100%;margin:0;overflow:hidden;background:#cfe0ff;color:var(--ink);font-family:var(--font);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+#mVoice,#dSpeak,#lsSpeak,#qSpeak{display:none!important}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
@@ -342,7 +343,6 @@ let spokenLast = '';
    The sentence is normalised (no emoji, no symbols, no player name) so one file serves every player. */
 let VOICE = null, voiceSrc = null;
 const VOICE_BUF = {};
-try{ fetch('voice/manifest.json').then(r => r.ok ? r.json() : null).then(j => { VOICE = j; }).catch(() => {}); }catch(e){}
 const reEsc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function norm(t){
   let k = String(t).replace(/<[^>]+>/g, ' ').replace(/_/g, ' ').replace(/[^\u0600-\u06FF\s\d.,!؟?،:]/g, ' ');
@@ -350,6 +350,7 @@ function norm(t){
   return k.replace(/([!؟?.،,])\1+/g, '$1').replace(/\s+([!؟?.،,:])/g, '$1').replace(/\s+/g, ' ').trim();
 }
 function speak(t, force){
+  return; // read-aloud is off: text is written, natural sounds stay
   if (!S.voice && !force) return;
   const key = norm(t); if (!key) return;
   spokenLast = key;
