@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>جزر أمان</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -147,7 +152,7 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
 .cert .credit{box-shadow:none;border-width:2px}
 .credit.corner{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));flex-direction:column;gap:2px;padding:6px 10px;border-radius:16px;animation:drop .5s both}
 .credit.corner img{height:64px}
-@media (max-width:640px){.credit.corner img{height:44px}.credit.corner span{font-size:.75rem}}
+@media (max-width:640px){.credit.corner img{height:40px}.credit.corner span{font-size:.75rem}.titlewrap.full{padding-top:78px}}
 .topics{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .topics span{background:#fff;border:3px solid var(--ink);border-radius:999px;padding:3px 12px;font-weight:800;box-shadow:0 3px 0 var(--ink)}
 .field{display:grid;gap:6px;width:100%;max-width:380px;text-align:right}
@@ -243,6 +248,9 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 </style>
+</head>
+<body>
+
 
 <canvas id="c" aria-label="عالم اللعبة"></canvas>
 <div id="labels"></div>
@@ -1764,3 +1772,6 @@ function start(data){
 window.claude?.hot?.snapshot?.(() => ({ S }));
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 </script>
+
+</body>
+</html>
