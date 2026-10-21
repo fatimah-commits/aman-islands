@@ -383,7 +383,7 @@ function speak(t, queue){
   const id = SAY_ID[norm(t)]; if (id) voice(id, queue);
 }
 const hush = () => { voiceQ = null; try{ if (voiceSrc) voiceSrc.stop(); }catch(e){} voiceSrc = null; };
-/* the characters speak with real recorded voices: voice/<id>.mp3 (see record.html).
+/* the characters speak with real recorded voices: voice/<id>.mp3 (lines.js lists them).
    A line that has no recording simply stays silent. queue=true waits for the current line to end. */
 const REC = {};
 const voiceDone = (max = 7) => { const t0 = T; return waitUntil(() => (!voiceSrc && !voiceWait && !voiceQ) || T - t0 > max); };
@@ -1775,9 +1775,10 @@ const MSGS = [
 const PADS4 = { tell:{ t:'🏠 أقول لأهلي', c:0x8a5cff, ico:'home', x:-2.6 }, chat:{ t:'💬 أرد عادي', c:0x1fb88a, ico:'chat', x:2.6 } };
 async function levelMountain(){
   const top = world.parts.pillarTop;
-  const str = hooded3d(); str.position.set(0, top, -8); scene.add(str);
+  // she looks like a sweet girl until the story at the end shows who is really behind the picture
+  const str = girl3d({ hair:0xc4622a, shirt:0xffc93c, bow:0xff6fae, style:'buns' }); str.scale.setScalar(1.4); str.position.set(0, 0, -5); scene.add(str);
   const strL = label(str, 'نجمة_الألعاب ⭐', 'dark big', 2.6);
-  every(() => { str.position.y = top + Math.abs(Math.sin(T * 2)) * .1; if (player) face(str, player.position.x, player.position.z); });
+  every(() => { if (player) face(str, player.position.x, player.position.z); });
   const cousin = girl3d(CAST.cousin.d3); cousin.position.set(9, 0, 1); cousin.visible = false; scene.add(cousin);
   label(cousin, 'ليان 💗', 'good big', 2.6);
   for (let i = 0; i < 40; i++){ const s = mk(G.oct(.08), 0xffffff, 0, 0, 0, { emissive:0xffffff, emissiveIntensity:.6 }); s.castShadow = false; s.position.set((Math.random() - .5) * 30, Math.random() * 14, (Math.random() - .5) * 26); scene.add(s); const v = .5 + Math.random() * .5; every(dt => { s.position.y -= v * dt; s.position.x += Math.sin(T + i) * dt * .3; if (s.position.y < 0) s.position.y = 14; }); }
