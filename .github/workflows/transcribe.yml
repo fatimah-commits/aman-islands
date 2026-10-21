@@ -2,7 +2,7 @@ name: Transcribe recordings
 on:
   push:
     branches: [main]
-    paths: ['voice-src/*.mp3']
+    paths: ['voice-src/*.mp3', '.github/workflows/transcribe.yml']
 permissions:
   contents: write
 jobs:
@@ -15,11 +15,13 @@ jobs:
       - run: pip install faster-whisper
       - run: |
           python - <<'PY'
-          import json, glob
+          import json, glob, subprocess, numpy as np
           from faster_whisper import WhisperModel
           m = WhisperModel('medium', device='cpu', compute_type='int8')
           for f in sorted(glob.glob('voice-src/*.mp3')):
-              segs, _ = m.transcribe(f, language='ar', word_timestamps=True, vad_filter=False)
+              pcm = subprocess.run(['ffmpeg', '-v', 'error', '-i', f, '-f', 's16le', '-ac', '1', '-ar', '16000', '-'], capture_output=True, check=True).stdout
+              audio = np.frombuffer(pcm, np.int16).astype(np.float32) / 32768
+              segs, _ = m.transcribe(audio, language='ar', word_timestamps=True, vad_filter=False)
               out = [{'s': s.start, 'e': s.end, 't': s.text, 'w': [[w.start, w.end, w.word] for w in s.words]} for s in segs]
               json.dump(out, open(f[:-4] + '.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=0)
               print(f, len(out))
