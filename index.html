@@ -84,6 +84,10 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
 
 #toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#fff;border:3px solid var(--ink);border-radius:18px;padding:8px 18px;font-weight:800;font-size:1.2rem;box-shadow:0 5px 0 var(--ink);width:max-content;max-width:min(560px,92vw);text-align:center;pointer-events:none;animation:popc .3s both}
 #toast.bad{background:#ffe3e8;border-color:var(--bad);box-shadow:0 5px 0 var(--bad)}
+#toast.answer{bottom:17vh;font-size:1.3rem;padding:10px 24px}
+#toast .ah{display:block;font-size:1.6rem;line-height:1.3}
+#toast.good .ah{color:var(--good)}
+#toast.bad .ah{color:var(--bad)}
 #toast.good{background:#dcf8ec;border-color:var(--good);box-shadow:0 5px 0 var(--good)}
 
 #tut{position:fixed;left:50%;top:56%;transform:translateX(-50%);display:grid;justify-items:center;gap:6px;pointer-events:none}
@@ -977,11 +981,14 @@ function puff(pos, color = 0xffffff, n = 12){
   }
 }
 let toastT = null;
-function toast(text, kind = ''){
+function toast(text, kind = '', answer = false){
   speak(text);
-  const t = $('#toast'); t.textContent = text; t.className = kind; t.hidden = false;
+  const t = $('#toast'); t.className = kind + (answer ? ' answer' : ''); t.hidden = false;
+  // after a choice, say plainly whether it was the right answer, then why
+  if (answer) t.innerHTML = `<b class="ah">${kind === 'good' ? '✓ إجابة صحيحة!' : '✗ إجابة غلط'}</b>${esc(text)}`;
+  else t.textContent = text;
   t.style.animation = 'none'; t.offsetWidth; t.style.animation = '';
-  clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600);
+  clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, answer ? 3400 : 2600);
 }
 /* one clear goal at a time, shown (and read aloud) at the top */
 let lastMission = '', lastMissionText = '';
@@ -1259,7 +1266,7 @@ function right(text){ sfx.good(); if (text) toast(text, 'good'); }
 function react(ok, text){
   const L = label(player, `<span class="rx">${ok ? '✓' : '✗'}</span>`, 'react ' + (ok ? 'good' : 'bad'), 2.5);
   setTimeout(() => unlabel(L), 1150);
-  if (text) toast(text, ok ? 'good' : 'bad');
+  if (text) toast(text, ok ? 'good' : 'bad', true);
   puff(player.position, ok ? 0xffe27a : 0xff5c7a, ok ? 12 : 6);
   if (ok){ player.userData.jump = true; quiet(tween(.55, (e, k) => { player.position.y = Math.sin(k * Math.PI) * 1.1; player.rotation.y += .22; }).then(() => { player.userData.jump = false; })); }
   else { const x0 = player.position.x; quiet(tween(.4, (e, k) => { player.position.x = x0 + Math.sin(k * Math.PI * 6) * .15; })); }
@@ -1640,7 +1647,7 @@ async function levelTime(){
     $('#mission').hidden = true; lastMissionText = '';
     await autoWalk(0, 4.5);
   }
-  await finish(1, starsFor(mistakes), 'لما يرن المؤقت، أطفي الشاشة.', '💛 بابا فخور فيك! تعالي نلعب برا مع بعض');
+  await finish(1, starsFor(mistakes), 'لما يرن المؤقت، أطفي الشاشة.', '💛 بابا فخور فيك! تعالي نقرا كتاب مع بعض يا بنتي');
 }
 
 /* ================= ISLAND 3: ask before downloading ================= */
