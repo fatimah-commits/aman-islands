@@ -1817,12 +1817,12 @@ async function levelMountain(){
   $('#mission').hidden = true; lastMissionText = '';
   const card = (pic, body) => panel(`<div class="card reveal"><p class="eyebrow">💬 مين كانت تكلّمك؟</p><div class="pfp">${pic}</div>${body}</div>`);
   // her profile picture is a cute girl: that is the lie the fox hides behind
-  card(pGirl({ hair:'#c4622a', shirt:'#ffc93c', bow:'#ff6fae', style:'buns' }), `<h2>نجمة_الألعاب ⭐</h2><p class="pnote">تقول: "أنا بنت مثلك، عمري ٩ سنين 🎀"</p><button class="btn go big glow" id="rvGo">🔍 اكشفي الحقيقة</button>`);
-  voice('n61');
+  card(pGirl({ hair:'#c4622a', shirt:'#ffc93c', bow:'#ff6fae', style:'buns' }), `<h2>نجمة_الألعاب ⭐</h2><p class="pnote">تقول: "أنا بنت مثلك، عمري تسع سنين 🎀"</p><button class="btn go big glow" id="rvGo">🔍 اكشفي الحقيقة</button>`);
+  voice('r1'); voice('n61', true);
   await pending(res => { $('#rvGo').onclick = res; });
   hush(); sfx.bad();
-  card(PORTRAITS.fox(), `<h2>طلعت الثعلبة! 🦊</h2><p class="pnote">بالإنترنت أي أحد يقدر يكذب عن نفسه.</p><button class="btn big blockbtn" id="rvBlock">🚫 احظريها</button>`);
-  $('#panel .pfp').classList.add('flip');
+  card(PORTRAITS.fox(), `<h2>طلعت الثعلبة! 🦊</h2><p class="pnote">بالإنترنت أي أحد يقدر يكذب.</p><button class="btn big blockbtn" id="rvBlock">🚫 احظريها</button>`);
+  $('#panel .pfp').classList.add('flip'); voice('r2');
   await pending(res => { $('#rvBlock').onclick = res; });
   card(PORTRAITS.fox(), `<h2>تم الحظر ✓</h2><p class="pnote">ما تقدر تكلّمك بعد اليوم 💪</p>`);
   $('#panel .pfp').classList.add('blocked');
