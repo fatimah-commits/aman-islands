@@ -1670,7 +1670,7 @@ async function levelStore(){
   await lessonCard({ num:'٣', icon:'🎁', title:'أستأذن قبل التحميل',
     say:'قبل ما تنزّلين أي لعبة جديدة، اسألي ماما أو بابا 🙋‍♀️' });
   showTut();
-  const boxes = []; let spawned = 0, resolved = 0, collected = 0, momCool = 0, spawnT = 1.6;
+  const boxes = []; let spawned = 0, resolved = 0, collected = 0, momCool = 0, spawnT = 1.6, momReady = true;
   const cols = [0xff8fb0, 0xb48cff, 0x7fb0ff, 0xffc93c, 0xffa860];
   function spawn(){
     const ad = ADS[spawned], k = spawned++;
@@ -1680,13 +1680,13 @@ async function levelStore(){
     const g = giftMesh(cols[k % cols.length]); g.position.set(x, 14, z); scene.add(g);
     const b = { g, ad, state:'falling', alive:true, L:label(g, '؟ ' + esc(ad.n), 'q big', 1.9) };
     boxes.push(b); sfx.whoosh();
-    quiet(tween(.9, (e, kk) => { g.position.y = 14 * (1 - kk * kk); }, t => t).then(() => { g.position.y = 0; b.state = 'new'; sfx.pop(); puff(g.position, 0xffffff, 8); }));
+    quiet(tween(.9, (e, kk) => { g.position.y = 14 * (1 - kk * kk); }, t => t).then(() => { g.position.y = 0; b.state = 'new'; momReady = true; sfx.pop(); puff(g.position, 0xffffff, 8); }));
   }
   function removeBox(b){ b.alive = false; unlabel(b.L); resolved++; taps = taps.filter(t => t.obj !== b.g); }
   async function momCheck(){
     const fresh = boxes.filter(b => b.alive && b.state === 'new');
     if (!fresh.length) return;
-    momCool = 4; busy = true; face(mom, player.position.x, player.position.z);
+    momCool = 4; momReady = false; busy = true; face(mom, player.position.x, player.position.z);
     momL.el.textContent = 'تعالي نشوف مع بعض يا حلوة 🔍'; sfx.click(); voice('s1');
     await wait(2.2);
     momL.el.textContent = '🔍 ماما تشوف اللعبة…';
@@ -1704,7 +1704,7 @@ async function levelStore(){
   }
   every(dt => {
     momCool -= dt;
-    if (spawned < ADS.length && boxes.filter(b => b.alive).length < 2 && !busy){
+    if (spawned < ADS.length && !boxes.some(b => b.alive) && !busy){
       const last = boxes[boxes.length - 1];
       if (!last || last.state !== 'falling'){ spawnT += dt; if (spawnT > 1.6){ spawnT = 0; spawn(); } }
     }
@@ -1715,7 +1715,10 @@ async function levelStore(){
     else if (oks.length){ mission('💚', 'ماما وافقت! خذي اللعبة الخضرا', resolved, ADS.length); guide(nearest(oks.map(b => b.g)), 2.2); }
     else { mission('⏳', 'انتظري اللعبة الجاية...', resolved, ADS.length); guide(null); }
     if (busy) return;
-    if (momCool <= 0 && dist2(player, mom.position.x, mom.position.z) < 2.4) quiet(momCheck());
+    // mom answers once for each new game (or when the girl walks back to her), and never talks over herself
+    const dMom = dist2(player, mom.position.x, mom.position.z);
+    if (dMom > 2.9) momReady = true;
+    if (momReady && momCool <= 0 && dMom < 2.4 && !(voiceSrc && /^s/.test(voiceSrc.id))) quiet(momCheck());
     for (const b of boxes){
       if (!b.alive || b.state === 'falling') continue;
       b.g.rotation.y += dt * .6;
