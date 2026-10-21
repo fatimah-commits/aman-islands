@@ -349,9 +349,9 @@ function norm(t){
 }
 /* any shown text that has a recording in lines.js is played in that voice; the rest stays silent */
 let SAY_ID = null;
-function speak(t){
+function speak(t, queue){
   if (!SAY_ID){ SAY_ID = {}; (window.VOICE_LINES || []).forEach(g => g[3].forEach(([id, txt]) => { SAY_ID[norm(txt)] = id; })); }
-  const id = SAY_ID[norm(t)]; if (id) voice(id);
+  const id = SAY_ID[norm(t)]; if (id) voice(id, queue);
 }
 const hush = () => { voiceQ = null; try{ if (voiceSrc) voiceSrc.stop(); }catch(e){} voiceSrc = null; };
 /* the characters speak with real recorded voices: voice/<id>.mp3 (see record.html).
@@ -989,7 +989,7 @@ function mission(icon, text, n, of, cls = ''){
   const html = `<div><span class="mi">${icon}</span><span class="mt">${text}</span>${of ? `<span class="mp">${AR(n)} / ${AR(of)}</span>` : ''}</div>`;
   const m = $('#mission'); m.className = 'topzone ' + cls; m.hidden = false;
   if (html !== lastMission){ m.innerHTML = html; lastMission = html; }
-  if (text !== lastMissionText){ lastMissionText = text; const pn = $('#panel'); if ($('#dlg').hidden && (pn.hidden || !pn.classList.contains('dim'))) speak(text); }
+  if (text !== lastMissionText){ lastMissionText = text; const pn = $('#panel'); if ($('#dlg').hidden && (pn.hidden || !pn.classList.contains('dim'))) speak(text, true); }
 }
 const guide = (obj, dy = 3) => { guideObj = obj; guideDy = dy; };
 
@@ -1567,7 +1567,7 @@ async function levelTreasure(){
   label(dome1, '🛡️ محمي بكلمة مرور قوية', 'good big', 2.8);
   puff(fox.position, 0xf7902a); scene.remove(fox);
   await wait(1.2);
-  await finish(0, starsFor(mistakes), 'كلمة المرور سر، إلا عن ماما وبابا.', '💜 ماما: فخورة فيك يا عمري!');
+  await finish(0, starsFor(mistakes), 'كلمة المرور سر، إلا عن ماما وبابا.', '💜 ماما فخورة فيك يا عمري!');
 }
 
 /* ================= ISLAND 2: screen time ================= */
@@ -1640,7 +1640,7 @@ async function levelTime(){
     $('#mission').hidden = true; lastMissionText = '';
     await autoWalk(0, 4.5);
   }
-  await finish(1, starsFor(mistakes), 'لما يرن المؤقت، أطفي الشاشة.', '💛 بابا: تعالي نلعب برا مع بعض!');
+  await finish(1, starsFor(mistakes), 'لما يرن المؤقت، أطفي الشاشة.', '💛 بابا فخور فيك! تعالي نلعب برا مع بعض');
 }
 
 /* ================= ISLAND 3: ask before downloading ================= */
@@ -1675,10 +1675,12 @@ async function levelStore(){
   async function momCheck(){
     const fresh = boxes.filter(b => b.alive && b.state === 'new');
     if (!fresh.length) return;
-    momCool = 1.5; face(mom, player.position.x, player.position.z);
+    momCool = 4; busy = true; face(mom, player.position.x, player.position.z);
     momL.el.textContent = 'تعالي نشوف مع بعض يا حلوة 🔍'; sfx.click(); voice('s1');
-    await wait(.9);
-    momL.el.textContent = 'ماما 💜';
+    await wait(2.2);
+    momL.el.textContent = '🔍 ماما تشوف اللعبة…';
+    await wait(1.6);
+    momL.el.textContent = 'ماما 💜'; busy = false;
     fresh.forEach(b => {
       if (!b.alive) return;
       if (b.ad.ok){ b.state = 'ok'; b.g.userData.body.material = mat(0x1fb88a, { emissive:0x1fb88a, emissiveIntensity:.35 }); b.L.el.className = 'lbl good big'; b.L.el.textContent = '✓ ' + b.ad.n; puff(b.g.position, 0x1fb88a, 8); tappable(b.g, 0); }
@@ -1791,7 +1793,7 @@ async function levelMountain(){
   sfx.whoosh(); unlabel(fL);
   await tween(1.2, e => { fx.position.set(0, top + e * 9, -8 - e * 22); fx.rotation.x = e * 12; fx.rotation.z = e * 8; });
   scene.remove(fx); right('حظرناها! ✅'); await wait(1);
-  await finish(3, starsFor(mistakes), 'ما أكلّم الغرباء، وأقول لأهلي.', '💛 بابا: نحبك ونحميك دايماً!');
+  await finish(3, starsFor(mistakes), 'ما أكلّم الغرباء، وأقول لأهلي.', '💛 بابا يحبك ويحميك دايماً!');
 }
 
 /* ================= loop + boot ================= */
