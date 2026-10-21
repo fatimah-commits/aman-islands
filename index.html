@@ -87,6 +87,14 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
 @keyframes stamp{0%{transform:translate(-50%,-50%) rotate(-8deg) scale(2.4);opacity:0}100%{transform:translate(-50%,-50%) rotate(-8deg) scale(1);opacity:1}}
 .stamp{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-8deg);background:#fff;border:6px solid var(--bad);color:var(--bad);border-radius:24px;padding:12px 22px;font-size:2.4rem;font-weight:800;text-align:center;white-space:nowrap;box-shadow:0 8px 0 var(--bad);animation:stamp .45s ease-out}
 .stamp small{display:block;font-size:1rem;color:var(--ink);white-space:nowrap}
+.reveal{justify-items:center;text-align:center}
+.pfp{width:130px;height:130px;border-radius:50%;border:5px solid var(--accent);background:#eef0ff;overflow:hidden;display:grid;place-items:center;margin:4px auto}
+.pfp svg{width:100%;height:100%}
+.pfp.flip{animation:flip .7s ease-out;border-color:#f7902a;background:#fff1e0}
+.pfp.blocked{filter:grayscale(1);opacity:.6;border-color:var(--bad)}
+@keyframes flip{0%{transform:rotateY(0)}50%{transform:rotateY(90deg) scale(.9)}100%{transform:rotateY(0)}}
+.pnote{margin:0 0 6px;font-weight:700;font-size:1.1rem}
+.blockbtn{background:var(--bad)!important;color:#fff!important}
 #toast.answer{bottom:17vh;font-size:1.3rem;padding:10px 24px}
 #toast .ah{display:block;font-size:1.6rem;line-height:1.3}
 #toast.good .ah{color:var(--good)}
@@ -1803,24 +1811,24 @@ async function levelMountain(){
     if (m.friend){ await wait(.6); puff(cousin.position, 0xff8fc8, 8); cousin.visible = false; }
     await autoWalk(0, 6);
   }
-  // the reveal
+  // the reveal: the girl opens the stranger's profile, sees the fox behind it, and blocks her herself
   busy = true; await voiceDone();
-  // the stranger hops down from the pillar to stand right in front of the girl
-  const near = new THREE.Vector3(player.position.x, 0, player.position.z - 3.2), from = str.position.clone();
-  sfx.whoosh();
-  await tween(1, e => { str.position.lerpVectors(from, near, e); str.position.y += Math.sin(e * Math.PI) * 3; });
-  str.position.copy(near); face(str, player.position.x, player.position.z);
-  toast('مين "نجمة_الألعاب" بالحقيقة؟ 🤔'); await wait(.6); await voiceDone();
-  puff(str.position, 0xf7902a, 22); sfx.bad();
-  scene.remove(str); unlabel(strL);
-  const fx = fox3d(); fx.position.copy(near); fx.scale.setScalar(1.4); scene.add(fx); face(fx, player.position.x, player.position.z);
-  const fL = label(fx, '🦊 هههه! كشفتيني!', 'bad big', 3); voice('m6');
-  await wait(.8); await voiceDone(); await wait(.3);
-  unlabel(fL);
-  const stamp = document.createElement('div'); stamp.className = 'stamp'; stamp.innerHTML = '🚫 حظرناها!<small>ما تقدر تكلّمك بعد اليوم</small>';
+  puff(str.position, 0x6a5e8a, 16); scene.remove(str); unlabel(strL);
+  $('#mission').hidden = true; lastMissionText = '';
+  const card = (pic, body) => panel(`<div class="card reveal"><p class="eyebrow">💬 مين كانت تكلّمك؟</p><div class="pfp">${pic}</div>${body}</div>`);
+  // her profile picture is a cute girl: that is the lie the fox hides behind
+  card(pGirl({ hair:'#c4622a', shirt:'#ffc93c', bow:'#ff6fae', style:'buns' }), `<h2>نجمة_الألعاب ⭐</h2><p class="pnote">تقول: "أنا بنت مثلك، عمري ٩ سنين 🎀"</p><button class="btn go big glow" id="rvGo">🔍 اكشفي الحقيقة</button>`);
+  voice('n61');
+  await pending(res => { $('#rvGo').onclick = res; });
+  hush(); sfx.bad();
+  card(PORTRAITS.fox(), `<h2>طلعت الثعلبة! 🦊</h2><p class="pnote">بالإنترنت أي أحد يقدر يكذب عن نفسه.</p><button class="btn big blockbtn" id="rvBlock">🚫 احظريها</button>`);
+  $('#panel .pfp').classList.add('flip');
+  await pending(res => { $('#rvBlock').onclick = res; });
+  card(PORTRAITS.fox(), `<h2>تم الحظر ✓</h2><p class="pnote">ما تقدر تكلّمك بعد اليوم 💪</p>`);
+  $('#panel .pfp').classList.add('blocked');
+  const stamp = document.createElement('div'); stamp.className = 'stamp'; stamp.innerHTML = '🚫 حظرناها!';
   document.body.appendChild(stamp); sfx.win(); voice('n62');
-  await tween(1.2, e => { fx.position.set(near.x, e * 9, near.z - e * 22); fx.rotation.x = e * 12; fx.rotation.z = e * 8; });
-  scene.remove(fx); await voiceDone(); await wait(.8); stamp.remove();
+  await wait(.6); await voiceDone(); await wait(1); stamp.remove(); $('#panel').hidden = true;
   await finish(3, starsFor(mistakes), 'ما أكلّم الغرباء، وأقول لأهلي.', '💛 بابا يحبك ويحميك دايماً!');
 }
 
