@@ -1767,12 +1767,12 @@ async function levelStore(){
 
 /* ================= ISLAND 4: strangers online ================= */
 const MSGS = [
-  { from:'نجمة_الألعاب', who:'hooded', t:'هلا! كم عمرك؟ أرسلي لي صورتك 😊', ans:['shield', 'tell'], ok:'صح! هذي أشياء خاصة 🛡️', no:'لا! ما نعطي صورنا للغرباء' },
+  { from:'نجمة_الألعاب', who:'hooded', t:'هلا! كم عمرك؟ أرسلي لي صورتك 😊', ans:['tell'], ok:'صح! قولي لأهلك 🏠', no:'لا! ما نعطي صورنا للغرباء' },
   { from:'ليان – بنت خالتك', who:'cousin', friend:true, t:'متى بتجون بيت جدتي اليوم؟', ans:['chat', 'tell'], ok:'صح! ليان تعرفينها 💗', no:'ليان قريبتك، ردي عادي!' },
   { from:'نجمة_الألعاب', who:'hooded', t:'لا تقولين لأهلك عن كلامنا، خليه سر 🤫', ans:['tell'], ok:'صح! قولي لأهلك 🏠', no:'لازم تقولين لأهلك!' },
   { from:'نجمة_الألعاب', who:'hooded', t:'تعالي بكره للحديقة وبعطيك جواهر 🎁', ans:['tell'], ok:'صح! ما نقابل غرباء أبداً', no:'خطر! قولي لأهلك 🏠' },
 ];
-const PADS4 = { shield:{ t:'🛡️ ما أشارك', c:0x4f8df5, ico:'shield', x:-5.5 }, tell:{ t:'🏠 أقول لأهلي', c:0x8a5cff, ico:'home', x:0 }, chat:{ t:'💬 أرد عادي', c:0x1fb88a, ico:'chat', x:5.5 } };
+const PADS4 = { tell:{ t:'🏠 أقول لأهلي', c:0x8a5cff, ico:'home', x:-2.6 }, chat:{ t:'💬 أرد عادي', c:0x1fb88a, ico:'chat', x:2.6 } };
 async function levelMountain(){
   const top = world.parts.pillarTop;
   const str = hooded3d(); str.position.set(0, top, -8); scene.add(str);
@@ -1785,7 +1785,7 @@ async function levelMountain(){
   const pads = Object.entries(PADS4).map(([k, d]) => { const p = padMesh(d.c); p.position.set(d.x, 0, 1); scene.add(p); tappable(p, 0); const ic = icon(d.ico); ic.position.set(0, 1.5, 0); p.add(ic); every(() => { ic.rotation.y = Math.sin(T * 1.4) * .5; }); label(p, d.t, 'big', 2.6); return { k, p }; });
   await lessonCard({ num:'٤', icon:'💬', title:'الغرباء بالإنترنت',
     say:'اللي ما تعرفينه بالحقيقة غريب 👤 لا تعطينه اسمك ولا صورتك، وقولي لأهلك.',
-    chips:[['🛡️', 'ما أشارك'], ['🏠', 'أقول لأهلي'], ['💬', 'أرد عادي']] });
+    chips:[['🏠', 'أقول لأهلي'], ['💬', 'أرد عادي']] });
   showTut();
   for (let i = 0; i < MSGS.length; i++){
     const m = MSGS[i];
@@ -1807,7 +1807,7 @@ async function levelMountain(){
       picked = on.k; ok = m.ans.includes(picked);
       puff(on.p.position, ok ? 0x1fb88a : 0xff5c7a, 8);
       if (ok) right(); else mistake();
-      const msg = ok ? (picked === 'tell' && m.ans[0] !== 'tell' ? 'صح! قولي لأهلك دايماً 🏠' : m.ok) : (picked === 'shield' ? 'زين! بس لازم تقولين لأهلك 🏠' : m.no);
+      const msg = ok ? (picked === 'tell' && m.ans[0] !== 'tell' ? 'صح! قولي لأهلك دايماً 🏠' : m.ok) : m.no;
       react(ok, msg); busy = true; await wait(1); await voiceDone(); busy = false;
       if (!ok) await autoWalk(player.position.x, 4.5);
     }
@@ -1850,7 +1850,7 @@ async function levelMountain(){
   $('#stBtns').innerHTML = '';
   const stamp = document.createElement('div'); stamp.className = 'stamp'; stamp.innerHTML = '🚫 حظرناها!';
   document.body.appendChild(stamp); sfx.win(); voice('st6'); voice('n62', true);
-  await wait(.8); await voiceDone(); await wait(1); stamp.remove(); $('#panel').hidden = true;
+  await wait(.8); await voiceDone(); await wait(2.6); stamp.remove(); $('#panel').hidden = true;
   await finish(3, starsFor(mistakes), 'ما أكلّم الغرباء، وأقول لأهلي.', '💛 بابا يحبك ويحميك دايماً!');
 }
 
