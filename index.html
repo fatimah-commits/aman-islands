@@ -996,11 +996,12 @@ function toast(text, kind = '', answer = false){
 }
 /* one clear goal at a time, shown (and read aloud) at the top */
 let lastMission = '', lastMissionText = '';
+const saidMissions = new Set();
 function mission(icon, text, n, of, cls = ''){
   const html = `<div><span class="mi">${icon}</span><span class="mt">${text}</span>${of ? `<span class="mp">${AR(n)} / ${AR(of)}</span>` : ''}</div>`;
   const m = $('#mission'); m.className = 'topzone ' + cls; m.hidden = false;
   if (html !== lastMission){ m.innerHTML = html; lastMission = html; }
-  if (text !== lastMissionText){ lastMissionText = text; const pn = $('#panel'); if ($('#dlg').hidden && (pn.hidden || !pn.classList.contains('dim'))) speak(text, true); }
+  if (text !== lastMissionText){ lastMissionText = text; const pn = $('#panel'); if ($('#dlg').hidden && (pn.hidden || !pn.classList.contains('dim')) && !saidMissions.has(text)){ saidMissions.add(text); speak(text, true); } }
 }
 const guide = (obj, dy = 3) => { guideObj = obj; guideDy = dy; };
 
@@ -1364,7 +1365,7 @@ async function showMap(first){
 }
 function enterLevel(i){
   startMusic(); sfx.whoosh();
-  hearts = 3; mistakes = 0; walked = 0; curIsland = i; vel.set(0, 0);
+  hearts = 3; mistakes = 0; walked = 0; curIsland = i; vel.set(0, 0); saidMissions.clear();
   resetScene(); mode = 'level';
   const d = ISL[i]; setAccent(d.css);
   setSky(d.sky[0], d.sky[1], d.sky[2]); scene.fog.near = 45; scene.fog.far = 150;
@@ -1670,7 +1671,7 @@ async function levelStore(){
   await lessonCard({ num:'٣', icon:'🎁', title:'أستأذن قبل التحميل',
     say:'قبل ما تنزّلين أي لعبة جديدة، اسألي ماما أو بابا 🙋‍♀️' });
   showTut();
-  const boxes = []; let spawned = 0, resolved = 0, collected = 0, momCool = 0, spawnT = 1.6, momReady = true;
+  const boxes = []; let spawned = 0, resolved = 0, collected = 0, momCool = 0, spawnT = 1.6, momReady = true, asks = 0;
   const cols = [0xff8fb0, 0xb48cff, 0x7fb0ff, 0xffc93c, 0xffa860];
   function spawn(){
     const ad = ADS[spawned], k = spawned++;
@@ -1687,10 +1688,10 @@ async function levelStore(){
     const fresh = boxes.filter(b => b.alive && b.state === 'new');
     if (!fresh.length) return;
     momCool = 4; momReady = false; busy = true; face(mom, player.position.x, player.position.z);
-    momL.el.textContent = 'تعالي نشوف مع بعض يا حلوة 🔍'; sfx.click(); voice('s1');
-    await wait(2.2);
-    momL.el.textContent = '🔍 ماما تشوف اللعبة…';
-    await wait(1.6);
+    const ask = asks++;
+    momL.el.textContent = ask ? '🔍 ماما تشوف اللعبة…' : 'تعالي نشوف مع بعض يا حلوة 🔍'; sfx.click();
+    if (!ask) voice('s1');
+    await wait(ask ? 1.6 : 2.6);
     momL.el.textContent = 'ماما 💜'; busy = false;
     fresh.forEach(b => {
       if (!b.alive) return;
@@ -1700,7 +1701,7 @@ async function levelStore(){
         quiet(wait(2).then(() => { if (!b.alive) return; puff(b.g.position, 0xff5c7a); scene.remove(b.g); removeBox(b); }));
       }
     });
-    right('شكراً إنك سألتيني يا قلبي 💜'); voice('s2', true);
+    if (ask === 1) right('شكراً إنك سألتيني يا قلبي 💜'); else sfx.good();
   }
   every(dt => {
     momCool -= dt;
