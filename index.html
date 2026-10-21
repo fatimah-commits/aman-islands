@@ -95,6 +95,12 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
 @keyframes flip{0%{transform:rotateY(0)}50%{transform:rotateY(90deg) scale(.9)}100%{transform:rotateY(0)}}
 .pnote{margin:0 0 6px;font-weight:700;font-size:1.1rem}
 .duo{display:flex;gap:14px;justify-content:center}
+.story .late{opacity:0;animation:fadein .4s 1.9s forwards;display:grid;gap:6px;justify-items:center}
+@keyframes fadein{to{opacity:1}}
+.unmask{position:relative;border-color:var(--bad)!important;background:#2c2650!important}
+.unmask>div{position:absolute;inset:0;display:grid;place-items:center}
+.unmask .mask{background:#eef0ff;animation:maskoff 1.3s .7s ease-in forwards}
+@keyframes maskoff{20%{transform:translateY(8%) rotate(4deg)}100%{transform:translateY(-130%) rotate(-30deg);opacity:0}}
 .story .pfp{width:110px;height:110px;margin:0}
 .story .row{justify-content:center;flex-wrap:wrap;gap:8px}
 .blockbtn2{background:var(--good)!important;color:#fff!important}
@@ -1829,7 +1835,9 @@ async function levelMountain(){
   await step([me, star], 'صرتي تحسبينها صديقتك 💗', 'كانت لطيفة وتساعدك باللعبة.', 'st2');
   await step([star], 'بعدين قالت لك… 😟', '"أرسلي لي صورتك وعنوان بيتك، ولا تقولين لأهلك!"', 'st3');
   // the mask comes off, and the girl decides what to do
-  scene4([pFox()], 'هذي مو بنت… هذي الثعلبة! 🦊', 'وش تسوين؟', 'flip'); sfx.bad(); voice('st4');
+  // the cute picture slides off like a mask and a hidden stranger is behind it
+  panel(`<div class="card reveal story"><p class="eyebrow">📖 قصة قصيرة</p><div class="duo"><div class="pfp unmask"><div class="under">${pHooded()}</div><div class="mask">${star}</div></div></div><div class="late"><h2>😨 الصورة كانت كذبة!</h2><p class="pnote">وراها شخص غريب ما تعرفينه. وش تسوين؟</p><div class="row" id="stBtns"></div></div></div>`);
+  await wait(1.9); sfx.bad(); voice('st4');
   $('#stBtns').innerHTML = '<button class="btn big blockbtn2" id="stTell">🏠 أقول لماما وبابا</button><button class="btn big" id="stHide">🤫 أخليه سر</button>';
   let told = false;
   while (!told){
@@ -1838,7 +1846,7 @@ async function levelMountain(){
   }
   right(); hush();
   await step([PORTRAITS.mom(), pDad()], 'ماما وبابا معك 💜', '"زين إنك قلتي لنا يا عمري، ما عليك منها."', 'st5');
-  scene4([pFox()], 'حظروها وبلّغوا عنها 🚫', '"ولا يهمك، حظرناها وبلّغنا عنها."', 'blocked');
+  scene4([pHooded()], 'حظروا "نجمة الألعاب" وبلّغوا عنها 🚫', '"ولا يهمك، حظرناها وبلّغنا عنها."', 'blocked');
   $('#stBtns').innerHTML = '';
   const stamp = document.createElement('div'); stamp.className = 'stamp'; stamp.innerHTML = '🚫 حظرناها!';
   document.body.appendChild(stamp); sfx.win(); voice('st6'); voice('n62', true);
