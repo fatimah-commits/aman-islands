@@ -12,14 +12,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: pip install faster-whisper
+      - run: pip install faster-whisper imageio-ffmpeg
       - run: |
           python - <<'PY'
-          import json, glob, subprocess, numpy as np
+          import json, glob, subprocess, numpy as np, imageio_ffmpeg
           from faster_whisper import WhisperModel
           m = WhisperModel('medium', device='cpu', compute_type='int8')
           for f in sorted(glob.glob('voice-src/*.mp3')):
-              pcm = subprocess.run(['ffmpeg', '-v', 'error', '-i', f, '-f', 's16le', '-ac', '1', '-ar', '16000', '-'], capture_output=True, check=True).stdout
+              pcm = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), '-v', 'error', '-i', f, '-f', 's16le', '-ac', '1', '-ar', '16000', '-'], capture_output=True, check=True).stdout
               audio = np.frombuffer(pcm, np.int16).astype(np.float32) / 32768
               segs, _ = m.transcribe(audio, language='ar', word_timestamps=True, vad_filter=False)
               out = [{'s': s.start, 'e': s.end, 't': s.text, 'w': [[w.start, w.end, w.word] for w in s.words]} for s in segs]
