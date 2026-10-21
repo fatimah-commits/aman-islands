@@ -211,6 +211,10 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
 .quizgrid .btn{display:grid;justify-items:center;gap:2px;padding:10px 6px;color:#fff;font-size:1.05rem}
 .quizgrid .btn span{font-size:2rem;line-height:1}
 .quizgrid .btn.dim{opacity:.35}
+.qfb{width:100%;border:3px solid;border-radius:16px;padding:8px 12px;font-weight:800;font-size:1.1rem;animation:pop .3s}
+.qfb b{display:block;font-size:1.5rem}
+.qfb.good{background:#dcf8ec;border-color:var(--good)}.qfb.good b{color:var(--good)}
+.qfb.bad{background:#ffe3e8;border-color:var(--bad)}.qfb.bad b{color:var(--bad)}
 
 .cert{border:6px double var(--ink);position:relative}
 .cert::before{content:"";position:absolute;inset:8px;border:2px solid var(--pink);border-radius:20px;pointer-events:none}
@@ -1432,16 +1436,16 @@ function showQuiz(){
       <h2>هذا الموقف من أي جزيرة؟</h2>
       <div class="quizq">${esc(Q.q)}</div>
       <div class="quizgrid">${ISL.map((d, k) => `<button class="btn ${picked !== undefined && k !== Q.a ? 'dim' : ''}" data-k="${k}" style="background:${d.css}"><span>${d.icon}</span>${d.sub}</button>`).join('')}</div>
+      ${picked === undefined ? '' : `<div class="qfb ${picked === Q.a ? 'good' : 'bad'}"><b>${picked === Q.a ? '✓ إجابة صحيحة!' : '✗ إجابة غلط'}</b>هذا موقف عن ${ISL[Q.a].icon} ${ISL[Q.a].sub}</div>`}
       <div class="row"><button class="btn small" id="qSpeak">🔊 اسمعي</button></div></div>`);
     if (picked === undefined) speak('هذا الموقف من أي جزيرة؟ ' + Q.q);
     $('#qSpeak').onclick = () => speak(Q.q, true);
     document.querySelectorAll('.quizgrid .btn').forEach(b => b.onclick = () => {
       if (picked !== undefined) return;
       const k = +b.dataset.k, ok = k === Q.a;
-      if (ok){ score++; sfx.good(); toast('✓ صح! هذا ' + ISL[Q.a].sub, 'good'); speak('صح! هذا ' + ISL[Q.a].sub); }
-      else { sfx.bad(); toast('✗ لا، هذا ' + ISL[Q.a].sub, 'bad'); speak('لا، هذا ' + ISL[Q.a].sub); }
+      if (ok){ score++; sfx.good(); } else sfx.bad();
       render(k);
-      setTimeout(() => { if (mode !== 'map') return; i++; if (i < qs.length) render(); else { S.quiz = true; save(); showCert(score, qs.length); } }, 1700);
+      setTimeout(() => { if (mode !== 'map') return; i++; if (i < qs.length) render(); else { S.quiz = true; save(); showCert(score, qs.length); } }, 2800);
     });
   };
   render();
