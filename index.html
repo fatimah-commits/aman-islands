@@ -84,6 +84,9 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
 
 #toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#fff;border:3px solid var(--ink);border-radius:18px;padding:8px 18px;font-weight:800;font-size:1.2rem;box-shadow:0 5px 0 var(--ink);width:max-content;max-width:min(560px,92vw);text-align:center;pointer-events:none;animation:popc .3s both}
 #toast.bad{background:#ffe3e8;border-color:var(--bad);box-shadow:0 5px 0 var(--bad)}
+@keyframes stamp{0%{transform:translate(-50%,-50%) rotate(-8deg) scale(2.4);opacity:0}100%{transform:translate(-50%,-50%) rotate(-8deg) scale(1);opacity:1}}
+.stamp{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-8deg);background:#fff;border:6px solid var(--bad);color:var(--bad);border-radius:24px;padding:12px 22px;font-size:2.4rem;font-weight:800;text-align:center;white-space:nowrap;box-shadow:0 8px 0 var(--bad);animation:stamp .45s ease-out}
+.stamp small{display:block;font-size:1rem;color:var(--ink);white-space:nowrap}
 #toast.answer{bottom:17vh;font-size:1.3rem;padding:10px 24px}
 #toast .ah{display:block;font-size:1.6rem;line-height:1.3}
 #toast.good .ah{color:var(--good)}
@@ -365,6 +368,7 @@ const hush = () => { voiceQ = null; try{ if (voiceSrc) voiceSrc.stop(); }catch(e
 /* the characters speak with real recorded voices: voice/<id>.mp3 (see record.html).
    A line that has no recording simply stays silent. queue=true waits for the current line to end. */
 const REC = {};
+const voiceDone = (max = 7) => { const t0 = T; return waitUntil(() => (!voiceSrc && !voiceWait && !voiceQ) || T - t0 > max); };
 let voiceQ = null, voiceWait = null;
 function voice(id, queue){
   const a = ac(); if (!a || !id) return;
@@ -945,6 +949,7 @@ function resetScene(){
   sun.intensity = .7; hemi.intensity = .75;
   scene.add(hemi, sun, sun.target);
   ['#dlg', '#toast', '#mission', '#panel', '#meter', '#tut', '#menu'].forEach(s => $(s).hidden = true);
+  document.querySelectorAll('.stamp').forEach(e => e.remove());
   lastMission = '';
 }
 function addClouds(n, spread, y0){
@@ -986,7 +991,7 @@ function puff(pos, color = 0xffffff, n = 12){
 }
 let toastT = null;
 function toast(text, kind = '', answer = false){
-  speak(text);
+  speak(text, answer);
   const t = $('#toast'); t.className = kind + (answer ? ' answer' : ''); t.hidden = false;
   // after a choice, say plainly whether it was the right answer, then why
   if (answer) t.innerHTML = `<b class="ah">${kind === 'good' ? '✓ إجابة صحيحة!' : '✗ إجابة غلط'}</b>${esc(text)}`;
@@ -1647,7 +1652,7 @@ async function levelTime(){
     val = Math.max(0, Math.min(100, val + o.d)); paint();
     puff(chosen.p.position, good ? 0x1fb88a : 0xff5c7a);
     if (good) right(); else mistake();
-    react(good, o.why); busy = true; await wait(1.1); busy = false;
+    react(good, o.why); busy = true; await wait(1.1); await voiceDone(); busy = false;
     pads.forEach(pd => { scene.remove(pd.p); unlabel(pd.L); });
     $('#mission').hidden = true; lastMissionText = '';
     await autoWalk(0, 4.5);
@@ -1768,8 +1773,8 @@ async function levelMountain(){
     const m = MSGS[i];
     const src = m.friend ? cousin : str;
     if (m.friend){ cousin.visible = true; face(cousin, player.position.x, player.position.z); puff(cousin.position, 0xff8fc8, 8); }
-    // the envelope flies from the sender to the player
-    busy = true;
+    // the envelope flies from the sender to the player, once everyone has finished talking
+    busy = true; await voiceDone();
     const env = new THREE.Group(); env.add(mk(G.box(.9, .6, .08), 0xffffff, 0, 0, 0, { emissive:0xffffff, emissiveIntensity:.3 })); const fl = mk(G.cone(.45, .3, 4), 0xffc93c, 0, .15, .05); fl.rotation.set(Math.PI / 2, Math.PI / 4, 0); fl.scale.set(1.4, 1, .6); env.add(fl);
     const a = src.position.clone().add(new THREE.Vector3(0, 2.3, 0)); env.position.copy(a); scene.add(env); sfx.whoosh();
     await tween(1, e => { const b = player.position.clone().add(new THREE.Vector3(0, 2.6, 0)); env.position.lerpVectors(a, b, e); env.position.y += Math.sin(e * Math.PI) * 3; env.rotation.y = e * 6; if (Math.random() < .4) sparkleAt(env.position); });
@@ -1785,29 +1790,37 @@ async function levelMountain(){
       puff(on.p.position, ok ? 0x1fb88a : 0xff5c7a, 8);
       if (ok) right(); else mistake();
       const msg = ok ? (picked === 'tell' && m.ans[0] !== 'tell' ? 'صح! قولي لأهلك دايماً 🏠' : m.ok) : (picked === 'shield' ? 'زين! بس لازم تقولين لأهلك 🏠' : m.no);
-      react(ok, msg); busy = true; await wait(1); busy = false;
+      react(ok, msg); busy = true; await wait(1); await voiceDone(); busy = false;
       if (!ok) await autoWalk(player.position.x, 4.5);
     }
     $('#mission').hidden = true; lastMissionText = '';
     if (picked === 'tell'){
       const mama = girl3d(CAST.mom.d3); mama.position.set(-1.6, 0, 2.6); scene.add(mama); puff(mama.position, 0x8a5cff, 8); face(mama, player.position.x, player.position.z);
-      quiet(wait(1.8).then(() => { puff(mama.position, 0x8a5cff, 8); scene.remove(mama); }));
-      label(mama, '💜 شكراً يا حبيبتي', 'good big', 2.6); voice('m5');
+      label(mama, '💜 شكراً يا حبيبتي', 'good big', 2.6); voice('m5'); busy = true;
+      await wait(.5); await voiceDone(); await wait(.3);
+      puff(mama.position, 0x8a5cff, 8); scene.remove(mama); busy = false;
     }
     if (m.friend){ await wait(.6); puff(cousin.position, 0xff8fc8, 8); cousin.visible = false; }
     await autoWalk(0, 6);
   }
   // the reveal
-  busy = true;
-  toast('مين "نجمة_الألعاب" بالحقيقة؟ 🤔'); await wait(1.2);
-  puff(str.position, 0x6a5e8a, 16); sfx.bad();
+  busy = true; await voiceDone();
+  // the stranger hops down from the pillar to stand right in front of the girl
+  const near = new THREE.Vector3(player.position.x, 0, player.position.z - 3.2), from = str.position.clone();
+  sfx.whoosh();
+  await tween(1, e => { str.position.lerpVectors(from, near, e); str.position.y += Math.sin(e * Math.PI) * 3; });
+  str.position.copy(near); face(str, player.position.x, player.position.z);
+  toast('مين "نجمة_الألعاب" بالحقيقة؟ 🤔'); await wait(.6); await voiceDone();
+  puff(str.position, 0xf7902a, 22); sfx.bad();
   scene.remove(str); unlabel(strL);
-  const fx = fox3d(); fx.position.set(0, top, -8); scene.add(fx); face(fx, 0, 6);
-  const fL = label(fx, '🦊 هههه! كشفتيني!', 'bad big', 2.4); voice('m6');
-  await wait(1.8);
-  sfx.whoosh(); unlabel(fL);
-  await tween(1.2, e => { fx.position.set(0, top + e * 9, -8 - e * 22); fx.rotation.x = e * 12; fx.rotation.z = e * 8; });
-  scene.remove(fx); right('حظرناها! ✅'); await wait(1);
+  const fx = fox3d(); fx.position.copy(near); fx.scale.setScalar(1.4); scene.add(fx); face(fx, player.position.x, player.position.z);
+  const fL = label(fx, '🦊 هههه! كشفتيني!', 'bad big', 3); voice('m6');
+  await wait(.8); await voiceDone(); await wait(.3);
+  unlabel(fL);
+  const stamp = document.createElement('div'); stamp.className = 'stamp'; stamp.innerHTML = '🚫 حظرناها!<small>ما تقدر تكلّمك بعد اليوم</small>';
+  document.body.appendChild(stamp); sfx.win(); voice('n62');
+  await tween(1.2, e => { fx.position.set(near.x, e * 9, near.z - e * 22); fx.rotation.x = e * 12; fx.rotation.z = e * 8; });
+  scene.remove(fx); await voiceDone(); await wait(.8); stamp.remove();
   await finish(3, starsFor(mistakes), 'ما أكلّم الغرباء، وأقول لأهلي.', '💛 بابا يحبك ويحميك دايماً!');
 }
 
