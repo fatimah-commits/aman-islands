@@ -2,7 +2,7 @@ name: Transcribe recordings
 on:
   push:
     branches: [main]
-    paths: ['voice-src/*.mp3', '.github/workflows/transcribe.yml']
+    paths: ['voice/*.mp3']
 permissions:
   contents: write
 jobs:
@@ -18,7 +18,13 @@ jobs:
           import json, glob, subprocess, numpy as np, imageio_ffmpeg
           from faster_whisper import WhisperModel
           m = WhisperModel('medium', device='cpu', compute_type='int8')
-          for f in sorted(glob.glob('voice-src/*.mp3')):
+          check = {}
+          for f in sorted(glob.glob('voice/*.mp3')):
+              pcm = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), '-v', 'error', '-i', f, '-f', 's16le', '-ac', '1', '-ar', '16000', '-'], capture_output=True, check=True).stdout
+              segs, _ = m.transcribe(np.frombuffer(pcm, np.int16).astype(np.float32) / 32768, language='ar')
+              check[f] = ' '.join(s.text.strip() for s in segs)
+          json.dump(check, open('voice-src/check.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=0)
+          for f in []:
               pcm = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), '-v', 'error', '-i', f, '-f', 's16le', '-ac', '1', '-ar', '16000', '-'], capture_output=True, check=True).stdout
               audio = np.frombuffer(pcm, np.int16).astype(np.float32) / 32768
               segs, _ = m.transcribe(audio, language='ar', word_timestamps=True, vad_filter=False)
@@ -29,7 +35,7 @@ jobs:
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898900+github-actions[bot]@users.noreply.github.com"
-          git add voice-src/*.json
-          git commit -m "Transcribe recordings"
+          git add voice-src/check.json
+          git commit -m "Check recordings"
           git pull --rebase origin main
           git push
