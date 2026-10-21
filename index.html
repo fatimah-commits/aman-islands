@@ -1845,8 +1845,8 @@ async function levelMountain(){
     if (!told){ mistake(); voice('n56'); $('#panel .pnote').textContent = '✗ لا! لازم تقولين لأهلك 🏠'; $('#stHide').disabled = true; }
   }
   right(); hush();
-  await step([PORTRAITS.mom(), pDad()], 'ماما وبابا معك 💜', '"أحسنتِ إنك قلتي لنا يا عمري، إحنا معك دايماً."', 'st5');
-  scene4([pHooded()], 'حظروا "نجمة الألعاب" وبلّغوا عنها 🚫', '"لا تخافين، حظرناها وما راح تكلّمك مرة ثانية."', 'blocked');
+  await step([PORTRAITS.mom(), pDad()], 'ماما وبابا معك 💜', '"كفو إنك قلتي لنا يا عمري، حنا معك دايم."', 'st5');
+  scene4([pHooded()], 'حظروا "نجمة الألعاب" وبلّغوا عنها 🚫', '"لا تخافين، حظرناها وما عاد بتكلّمك."', 'blocked');
   $('#stBtns').innerHTML = '';
   const stamp = document.createElement('div'); stamp.className = 'stamp'; stamp.innerHTML = '🚫 حظرناها!';
   document.body.appendChild(stamp); sfx.win(); voice('st6'); voice('n62', true);
