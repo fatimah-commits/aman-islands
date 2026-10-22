@@ -1825,7 +1825,7 @@ async function levelMountain(){
     if (picked === 'tell' && !momThanked){
       momThanked = true;
       const mama = girl3d(CAST.mom.d3); mama.position.set(-1.6, 0, 2.6); scene.add(mama); puff(mama.position, 0x8a5cff, 8); face(mama, player.position.x, player.position.z);
-      label(mama, '💜 شكراً يا حبيبتي', 'good big', 2.6); voice('m5'); busy = true;
+      label(mama, 'ماما 💜<small style="display:block">شكراً يا حبيبتي إنك قلتي لي</small>', 'good big', 2.8); voice('m5'); busy = true;
       await wait(.5); await voiceDone(); await wait(.3);
       puff(mama.position, 0x8a5cff, 8); scene.remove(mama); busy = false;
     }
