@@ -1012,7 +1012,7 @@ function toast(text, kind = '', answer = false){
   speak(text, answer);
   const t = $('#toast'); t.className = kind + (answer ? ' answer' : ''); t.hidden = false;
   // after a choice, say plainly whether it was the right answer, then why
-  if (answer) t.innerHTML = `<b class="ah">${kind === 'good' ? '✓ إجابة صحيحة!' : '✗ إجابة غلط'}</b>${esc(text)}`;
+  if (answer) t.innerHTML = `<b class="ah">${kind === 'good' ? '✓ جوابك صح!' : '✗ جوابك غلط'}</b>${esc(text)}`;
   else t.textContent = text;
   t.style.animation = 'none'; t.offsetWidth; t.style.animation = '';
   clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, answer ? 3400 : 2600);
@@ -1341,7 +1341,7 @@ function showSetup(){
     <div class="field"><label for="nm">وش اسمك يا بطلة؟</label><input id="nm" maxlength="14" autocomplete="off" placeholder="اكتبي اسمك" value="${esc(S.name)}"></div>
     <div class="field" style="text-align:center"><label>اختاري شخصيتك</label><div class="avs">${Object.keys(AVATARS).map(k => `<button class="av" data-av="${k}" aria-pressed="${S.avatar === k}" aria-label="شخصية">${pGirl(AVATARS[k].svg)}</button>`).join('')}</div></div>
     <button class="btn go big" id="go">يلا!</button></div>`);
-  speak('هلا! أنا أمينة. وش اسمك يا بطلة؟ واختاري شخصيتك.');
+  speak('هلا! اكتبي اسمك، واختاري شخصيتك.');
   document.querySelectorAll('.av').forEach(b => b.onclick = () => { sfx.pop(); S.avatar = b.dataset.av; document.querySelectorAll('.av').forEach(x => x.setAttribute('aria-pressed', x === b)); });
   const go = () => { const v = $('#nm').value.trim(); if (!v){ const n = $('#nm'); n.classList.remove('shake'); n.offsetWidth; n.classList.add('shake'); n.focus(); return; } const first = !S.name; S.name = v; save(); showMap(first); };
   $('#go').onclick = go; $('#nm').onkeydown = e => { if (e.key === 'Enter') go(); };
@@ -1383,7 +1383,7 @@ async function showMap(first){
     if (mode === 'map') p.hidden = false;
   }
   if (mode !== 'map') return;
-  if (nextI >= 0) mission('👆', nextI === 0 ? 'اضغطي على الجزيرة رقم ١ 🔑' : `ممتاز! اضغطي على الجزيرة رقم ${NUM[nextI]} ${ISL[nextI].icon}`, 0, 0, 'low');
+  if (nextI >= 0) mission('👆', nextI === 0 ? 'يلا اضغطي على أول جزيرة 🔑' : `كفو! اضغطي على الجزيرة اللي بعدها ${ISL[nextI].icon}`, 0, 0, 'low');
   else mission('🧩', S.quiz ? 'خلّصتِ كل شي! شوفي شهادتك 🏆' : 'خلّصتِ الجزر! جربي تحدي المراجعة', 0, 0, 'low');
 }
 function enterLevel(i){
@@ -1460,7 +1460,7 @@ function showQuiz(){
       <h2>هذا الموقف من أي جزيرة؟</h2>
       <div class="quizq">${esc(Q.q)}</div>
       <div class="quizgrid">${ISL.map((d, k) => `<button class="btn ${picked !== undefined && k !== Q.a ? 'dim' : ''}" data-k="${k}" style="background:${d.css}"><span>${d.icon}</span>${d.sub}</button>`).join('')}</div>
-      ${picked === undefined ? '' : `<div class="qfb ${picked === Q.a ? 'good' : 'bad'}"><b>${picked === Q.a ? '✓ إجابة صحيحة!' : '✗ إجابة غلط'}</b>هذا موقف عن ${ISL[Q.a].icon} ${ISL[Q.a].sub}</div>`}
+      ${picked === undefined ? '' : `<div class="qfb ${picked === Q.a ? 'good' : 'bad'}"><b>${picked === Q.a ? '✓ جوابك صح!' : '✗ جوابك غلط'}</b>هذا موقف عن ${ISL[Q.a].icon} ${ISL[Q.a].sub}</div>`}
       <div class="row"><button class="btn small" id="qSpeak">🔊 اسمعي</button></div></div>`);
     if (picked === undefined) speak('هذا الموقف من أي جزيرة؟ ' + Q.q);
     $('#qSpeak').onclick = () => speak(Q.q, true);
@@ -1468,6 +1468,7 @@ function showQuiz(){
       if (picked !== undefined) return;
       const k = +b.dataset.k, ok = k === Q.a;
       if (ok){ score++; sfx.good(); } else sfx.bad();
+      voice(ok ? 'g4' : 'g5');
       render(k);
       setTimeout(() => { if (mode !== 'map') return; i++; if (i < qs.length) render(); else { S.quiz = true; save(); showCert(score, qs.length); } }, 2800);
     });
