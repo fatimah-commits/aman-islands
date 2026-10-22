@@ -1589,7 +1589,7 @@ async function levelTreasure(){
   const refreshPw = () => items.filter(it => !it.bad).forEach((it, k) => { const sp = pw.children[k + 1]; sp.textContent = it.taken ? it.def[0] : it.def[1]; sp.classList.toggle('on', it.taken); });
   every(dt => {
     if (locked) return;
-    if (got < 3){ mission('🔑', 'ابني كلمة مرور قوية! اجمعي حرف ورقم ورمز', got, 3); guide(nearest(items.filter(it => !it.bad && !it.taken).map(it => it.m)), 1.6); }
+    if (got < 3){ mission('🔑', 'إذا تبين تسوين كلمة مرور قوية، اجمعي حرف ورقم ورمز', got, 3); guide(nearest(items.filter(it => !it.bad && !it.taken).map(it => it.m)), 1.6); }
     items.forEach((it, k) => {
       if (it.taken){ const a = T * 3 + k * 2.1; it.m.position.set(player.position.x + Math.cos(a) * .7, 2.4 + Math.sin(T * 4 + k) * .1, player.position.z + Math.sin(a) * .7); return; }
       if (!it.m.parent) return;
