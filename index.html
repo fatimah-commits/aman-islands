@@ -1333,7 +1333,7 @@ function showTitle(){
     <div class="bottom"><button class="btn go big glow" id="play" style="font-size:1.6rem;padding:14px 40px">ابدئي المغامرة ✨</button>
     <div class="topics">${ISL.map((d, i) => `<span style="border-color:${d.css};box-shadow:0 3px 0 ${d.css}">${d.icon} ${d.sub}</span>`).join('')}</div></div></div>
     <div class="credit corner"><img src="${LOGO}" alt="المؤسسة العامة للتدريب التقني والمهني"><span>مشروع طالبات</span></div>`, false);
-  $('#play').onclick = () => { startMusic(); sfx.win(); speak('هلا! يلا نبدأ المغامرة'); S.name ? showMap() : showSetup(); };
+  $('#play').onclick = () => { startMusic(); sfx.win(); voice('g0'); S.name ? showMap() : showSetup(); };
 }
 function showSetup(){
   panel(`<div class="card"><div style="width:100px">${pRobot()}</div>
@@ -1341,7 +1341,7 @@ function showSetup(){
     <div class="field"><label for="nm">وش اسمك يا بطلة؟</label><input id="nm" maxlength="14" autocomplete="off" placeholder="اكتبي اسمك" value="${esc(S.name)}"></div>
     <div class="field" style="text-align:center"><label>اختاري شخصيتك</label><div class="avs">${Object.keys(AVATARS).map(k => `<button class="av" data-av="${k}" aria-pressed="${S.avatar === k}" aria-label="شخصية">${pGirl(AVATARS[k].svg)}</button>`).join('')}</div></div>
     <button class="btn go big" id="go">يلا!</button></div>`);
-  speak('هلا! اكتبي اسمك، واختاري شخصيتك.');
+  speak('هلا! اكتبي اسمك، واختاري شخصيتك.', true);
   document.querySelectorAll('.av').forEach(b => b.onclick = () => { sfx.pop(); S.avatar = b.dataset.av; document.querySelectorAll('.av').forEach(x => x.setAttribute('aria-pressed', x === b)); });
   const go = () => { const v = $('#nm').value.trim(); if (!v){ const n = $('#nm'); n.classList.remove('shake'); n.offsetWidth; n.classList.add('shake'); n.focus(); return; } const first = !S.name; S.name = v; save(); showMap(first); };
   $('#go').onclick = go; $('#nm').onkeydown = e => { if (e.key === 'Enter') go(); };
