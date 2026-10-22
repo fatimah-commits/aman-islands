@@ -95,6 +95,10 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--grape);outline-
 @keyframes flip{0%{transform:rotateY(0)}50%{transform:rotateY(90deg) scale(.9)}100%{transform:rotateY(0)}}
 .pnote{margin:0 0 6px;font-weight:700;font-size:1.1rem}
 .duo{display:flex;gap:14px;justify-content:center}
+.pwbar{position:fixed;top:calc(122px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:6px 10px;font-weight:800;box-shadow:0 4px 0 var(--ink);white-space:nowrap;z-index:5}
+.pwbar span{min-width:46px;text-align:center;border:2px dashed #b9b2d8;border-radius:10px;padding:2px 6px;color:#9a93b8;font-size:.9rem}
+.pwbar span.on{border:2px solid var(--good);color:var(--ink);background:#dcf8ec;font-size:1.25rem}
+.bubble{display:inline-block;background:#fff3c4;border:2px dashed #f0b400;border-radius:14px;padding:6px 12px}
 .story .late{opacity:0;animation:fadein .4s 1.9s forwards;display:grid;gap:6px;justify-items:center}
 @keyframes fadein{to{opacity:1}}
 .unmask{position:relative;border-color:var(--bad)!important;background:#2c2650!important}
@@ -967,7 +971,7 @@ function resetScene(){
   sun.intensity = .7; hemi.intensity = .75;
   scene.add(hemi, sun, sun.target);
   ['#dlg', '#toast', '#mission', '#panel', '#meter', '#tut', '#menu'].forEach(s => $(s).hidden = true);
-  document.querySelectorAll('.stamp').forEach(e => e.remove());
+  document.querySelectorAll('.stamp, .pwbar').forEach(e => e.remove());
   lastMission = '';
 }
 function addClouds(n, spread, y0){
@@ -1024,7 +1028,7 @@ function mission(icon, text, n, of, cls = ''){
   const html = `<div><span class="mi">${icon}</span><span class="mt">${text}</span>${of ? `<span class="mp">${AR(n)} / ${AR(of)}</span>` : ''}</div>`;
   const m = $('#mission'); m.className = 'topzone ' + cls; m.hidden = false;
   if (html !== lastMission){ m.innerHTML = html; lastMission = html; }
-  if (text !== lastMissionText){ lastMissionText = text; const pn = $('#panel'); if ($('#dlg').hidden && (pn.hidden || !pn.classList.contains('dim')) && !saidMissions.has(text)){ saidMissions.add(text); speak(text, true); } }
+  if (text !== lastMissionText){ lastMissionText = text; const pn = $('#panel'); if ($('#dlg').hidden && (pn.hidden || !pn.classList.contains('dim')) && (curIsland === 2 || !saidMissions.has(text))){ saidMissions.add(text); speak(text, true); } }
 }
 const guide = (obj, dy = 3) => { guideObj = obj; guideDy = dy; };
 
@@ -1519,7 +1523,7 @@ function doneNpc(n, ok){ n.L.el.className = 'lbl big ' + (ok ? 'good' : 'bad'); 
 const L1 = [
   { who:'reem', name:'ريم – صديقتك', m:() => girl3d(CAST.reem.d3), vid:'l1', say:'عطيني كلمة المرور حقتك!', ok:false, g:'برافو! حفظتِ السر 🤐', b:'حتى الصديقة ما تعرفها!' },
   { who:'foxBoss', name:'"مديرة اللعبة"', m:() => fox3d(true), vid:'l2', say:'فزتي بجواهر! أرسلي لي كلمة المرور 💎', ok:false, g:'كشفتيها! هذي الثعلبة 🦊', b:'هذي الثعلبة متنكّرة!' },
-  { who:'mom', name:'ماما', m:() => girl3d(CAST.mom.d3), vid:'l3', say:'حبيبتي، قولي لي كلمة المرور، أكتبها عندي عشان ما تضيع 💜', ok:true, g:'صح! ماما تحفظها لك 💜', b:'ماما يصير تعرفها 💜' },
+  { who:'mom', name:'ماما', m:() => girl3d(CAST.mom.d3), vid:'l3', say:'يا حبيبتي، أنا ماما. قولي لي كلمة المرور، أكتبها عندي عشان ما تضيع 💜', ok:true, g:'صح! ماما تحفظها لك 💜', b:'ماما يصير تعرفها 💜' },
   { who:'hooded', name:'لاعبة_مجهولة', m:() => hooded3d(), vid:'l4', say:'عطيني كلمة المرور ولا…! 😠', ok:false, g:'برافو! وقولي لأهلك', b:'لا! قولي لأهلك على طول' },
 ];
 async function levelTreasure(){
@@ -1528,7 +1532,7 @@ async function levelTreasure(){
   const items = [];
   wander(fox, () => foxMode === 'chase' ? { x:player.position.x, z:player.position.z } : null);
   function dropCrystal(it){
-    it.taken = false; got--;
+    it.taken = false; got--; refreshPw();
     const a = Math.random() * Math.PI * 2, rr = 3 + Math.random() * 6;
     it.m.position.set(Math.sin(a) * rr, 1, Math.cos(a) * rr); it.L.show = true;
   }
@@ -1549,9 +1553,9 @@ async function levelTreasure(){
 
   // step 1: talk to every visitor
   let done = 0;
-  const angles = [-70, -25, 25, 70], people = [];
+  const spots = [[-4.8, 1], [-1.8, -.7], [1.8, -.7], [4.8, 1]], people = [];
   L1.forEach((v, k) => {
-    const a = angles[k] * Math.PI / 180, n = npc(v.m(), Math.sin(a) * 7, Math.cos(a) * 5.5 - 1.5, v.name);
+    const n = npc(v.m(), spots[k][0], spots[k][1], v.name); face(n.model, spots[k][0] * .3, 10);
     people.push(n);
     n.act = addAct(n.model, 1.8, async () => {
       face(n.model, player.position.x, player.position.z); face(player, n.model.position.x, n.model.position.z);
@@ -1572,15 +1576,20 @@ async function levelTreasure(){
   guide(null);
 
   // step 2: build a strong password while the fox chases
-  toast('اجمعي القطع اللي تلمع ✨ وابعدي عن الأحمر!', 'good'); sfx.pop();
+  toast('🔑 ابني كلمة مرور قوية، وابعدي عن الأحمر!', 'good'); sfx.pop();
   foxMode = 'chase'; fox.userData.spd = 2;
   const goods = [['Q', 'حرف', 0x8a5cff, [-6, 2]], ['٧', 'رقم', 0x1fb88a, [6, 3]], ['#', 'رمز', 0x4f8df5, [0, 8]]];
   const bads = [['1234', [-4, 6]], ['اسمي', [5, -1]]];
   goods.forEach(d => { const m = crystal(d[2]); m.position.set(d[3][0], 1, d[3][1]); scene.add(m); tappable(m, 0); items.push({ m, def:d, L:label(m, `${d[0]} <small>${d[1]}</small>`, 'q big', .9), taken:false }); });
   bads.forEach(([t, [x, z]]) => { const m = mk(G.ico(.45, 1), 0xff5c7a, x, 1, z, { emissive:0xff2050, emissiveIntensity:.3 }); scene.add(m); items.push({ m, bad:t, L:label(m, '✗ ' + esc(t), 'bad', .9) }); });
+  // the password she is building, shown piece by piece
+  const pw = document.createElement('div'); pw.className = 'pwbar';
+  pw.innerHTML = '<b>🔑 كلمة مرورك:</b>' + goods.map(d => `<span>${d[1]}</span>`).join('');
+  document.body.appendChild(pw);
+  const refreshPw = () => items.filter(it => !it.bad).forEach((it, k) => { const sp = pw.children[k + 1]; sp.textContent = it.taken ? it.def[0] : it.def[1]; sp.classList.toggle('on', it.taken); });
   every(dt => {
     if (locked) return;
-    if (got < 3){ mission('💎', 'اجمعي القطع اللي تلمع', got, 3); guide(nearest(items.filter(it => !it.bad && !it.taken).map(it => it.m)), 1.6); }
+    if (got < 3){ mission('🔑', 'ابني كلمة مرور قوية! اجمعي حرف ورقم ورمز', got, 3); guide(nearest(items.filter(it => !it.bad && !it.taken).map(it => it.m)), 1.6); }
     items.forEach((it, k) => {
       if (it.taken){ const a = T * 3 + k * 2.1; it.m.position.set(player.position.x + Math.cos(a) * .7, 2.4 + Math.sin(T * 4 + k) * .1, player.position.z + Math.sin(a) * .7); return; }
       if (!it.m.parent) return;
@@ -1588,7 +1597,7 @@ async function levelTreasure(){
       if (!it.bad && Math.random() < .08) sparkleAt(it.m.position);
       if (busy || dist2(it.m, player.position.x, player.position.z) > 1.1) return;
       if (it.bad){ scene.remove(it.m); unlabel(it.L); puff(it.m.position, 0xff5c7a); mistake(`✗ "${it.bad}" سهلة! أي أحد يخمّنها`); }
-      else { it.taken = true; it.L.show = false; got++; sfx.sparkle(); right(`✓ جمعتِ ${it.def[1]}: ${it.def[0]}`); }
+      else { it.taken = true; it.L.show = false; got++; refreshPw(); sfx.sparkle(); right(`✓ جمعتِ ${it.def[1]}: ${it.def[0]}`); }
     });
   });
   await waitUntil(() => got === 3);
@@ -1598,7 +1607,7 @@ async function levelTreasure(){
   mission('🧰', 'روحي لصندوق الكنز');
   guide(world.parts.chest, 2.6); tappable(world.parts.chest, 1.8);
   await pending(res => addAct(world.parts.chest, 2.4, res));
-  locked = true; busy = true; guide(null); $('#mission').hidden = true;
+  locked = true; busy = true; guide(null); $('#mission').hidden = true; pw.remove();
   items.filter(it => it.taken).forEach(it => { const s = it.m.position.clone(); quiet(tween(.6, e => { it.m.position.lerpVectors(s, new THREE.Vector3(0, 1.2, -3.5), e); }).then(() => scene.remove(it.m))); });
   await wait(.7);
   sfx.win(); puff(new THREE.Vector3(0, .5, -3.5), 0xffc93c, 18);
@@ -1623,7 +1632,7 @@ const DAY = [
   { time:'٥ المغرب', ico:'🔔', sky:[0x5a4aa8, 0xffd8b8, 0xff9a90], light:.7, h:5, q:'رنّ المؤقت وأنتِ بنص اللعبة!', opts:[
     { ico:'save', t:'أحفظ اللعبة وأطفيها', d:+25, why:'بطلة! 💪' },
     { ico:'game', t:'"خمس دقايق بس..."', d:-20, why:'تصير ساعة كاملة!' } ] },
-  { time:'٦ المسا', ico:'🌇', sky:[0x3a2a88, 0xffc0a0, 0xc070b8], light:.6, h:6, q:'طفيتِ الشاشة. وش تسوين الحين؟', opts:[
+  { time:'٦ المساء', ico:'🌇', sky:[0x3a2a88, 0xffc0a0, 0xc070b8], light:.6, h:6, q:'طفيتِ الشاشة. وش تسوين الحين؟', opts:[
     { ico:'ball', t:'ألعب برا', d:+20, why:'جسمك يحب الحركة! ⚽' },
     { ico:'paint', t:'أرسم وألوّن', d:+20, why:'حلو الرسم! 🎨' },
     { ico:'tv', t:'أشغّل التلفزيون', d:-20, why:'شاشة بعد! 👀' } ] },
@@ -1721,7 +1730,7 @@ async function levelStore(){
     momCool = 4; momReady = false; busy = true; face(mom, player.position.x, player.position.z);
     const ask = asks++;
     momL.el.textContent = ask ? '🔍 ماما تشوف اللعبة…' : 'تعالي نشوف مع بعض يا حلوة 🔍'; sfx.click();
-    if (!ask) voice('s1');
+    if (!ask) voice('s1', true);
     await wait(ask ? 1.6 : 2.6);
     momL.el.textContent = 'ماما 💜'; busy = false;
     fresh.forEach(b => {
@@ -1844,7 +1853,9 @@ async function levelMountain(){
   };
   await step([me, star], 'تلعبين مع بنت لطيفة 🎮', 'لعبت معك بنت اسمها "نجمة الألعاب".', 'st1');
   await step([me, star], 'صرتي تحسبينها صديقتك 💗', 'كانت لطيفة وتساعدك باللعبة.', 'st2');
-  await step([star], 'بعدين قالت لك… 😟', '"أرسلي لي صورتك وعنوان بيتك، ولا تقولين لأهلك!"', 'st3');
+  scene4([star], 'بعدين "نجمة الألعاب" قالت لك… 😟', '<span class="bubble">💬 "أرسلي لي صورتك وعنوان بيتك، ولا تقولين لأهلك!"</span>');
+  voice('st3i'); voice('st3', true);
+  await pending(res => { $('#stNext').onclick = res; }); hush(); sfx.click();
   // the mask comes off, and the girl decides what to do
   // the cute picture slides off like a mask and a hidden stranger is behind it
   panel(`<div class="card reveal story"><p class="eyebrow">📖 قصة قصيرة</p><div class="duo"><div class="pfp unmask"><div class="under">${pHooded()}</div><div class="mask">${star}</div></div></div><div class="late"><h2>😨 الصورة كانت كذبة!</h2><p class="pnote">وراها شخص غريب ما تعرفينه. وش تسوين؟</p><div class="row" id="stBtns"></div></div></div>`);
