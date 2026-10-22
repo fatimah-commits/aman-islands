@@ -1333,7 +1333,16 @@ function showTitle(){
     <div class="bottom"><button class="btn go big glow" id="play" style="font-size:1.6rem;padding:14px 40px">ابدئي المغامرة ✨</button>
     <div class="topics">${ISL.map((d, i) => `<span style="border-color:${d.css};box-shadow:0 3px 0 ${d.css}">${d.icon} ${d.sub}</span>`).join('')}</div></div></div>
     <div class="credit corner"><img src="${LOGO}" alt="المؤسسة العامة للتدريب التقني والمهني"><span>مشروع طالبات</span></div>`, false);
-  $('#play').onclick = () => { startMusic(); sfx.win(); voice('g0'); S.name ? showMap() : showSetup(); };
+  $('#play').onclick = async () => {
+    const b = $('#play'); if (b.disabled) return;
+    startMusic(); sfx.win();
+    if (S.name) return showMap();
+    // the welcome is heard on the title screen; the character screen opens once it ends
+    b.disabled = true; voice('g0');
+    const t0 = Date.now();
+    await new Promise(ok => { const f = () => ((!voiceSrc && !voiceWait && Date.now() - t0 > 400) || Date.now() - t0 > 8000) ? ok() : setTimeout(f, 100); f(); });
+    b.disabled = false; showSetup();
+  };
 }
 function showSetup(){
   panel(`<div class="card"><div style="width:100px">${pRobot()}</div>
