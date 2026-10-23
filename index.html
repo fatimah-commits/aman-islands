@@ -386,21 +386,23 @@ function speak(t, queue){
   if (!SAY_ID){ SAY_ID = {}; (window.VOICE_LINES || []).forEach(g => g[3].forEach(([id, txt]) => { SAY_ID[norm(txt)] = id; })); }
   const id = SAY_ID[norm(t)]; if (id) voice(id, queue);
 }
-const hush = () => { voiceQ = null; try{ if (voiceSrc) voiceSrc.stop(); }catch(e){} voiceSrc = null; };
+const hush = () => { voiceQ = []; try{ if (voiceSrc) voiceSrc.stop(); }catch(e){} voiceSrc = null; };
 /* the characters speak with real recorded voices: voice/<id>.mp3 (lines.js lists them).
    A line that has no recording simply stays silent. queue=true waits for the current line to end. */
 const REC = {};
-const voiceDone = (max = 7) => { const t0 = T; return waitUntil(() => (!voiceSrc && !voiceWait && !voiceQ) || T - t0 > max); };
-let voiceQ = null, voiceWait = null;
+const voiceDone = (max = 7) => { const t0 = T; return waitUntil(() => (!voiceSrc && !voiceWait && !voiceQ.length) || T - t0 > max); };
+// lines waiting their turn, played in order
+let voiceQ = [], voiceWait = null;
+const nextVoice = () => { const [q, ...rest] = voiceQ; voiceQ = []; if (q){ voice(q); voiceQ = rest; } };
 function voice(id, queue){
   const a = ac(); if (!a || !id) return;
-  if (queue && (voiceSrc || voiceWait)){ voiceQ = id; return; }
+  if (queue && (voiceSrc || voiceWait)){ if (spokenLast !== id && !voiceQ.includes(id)) voiceQ.push(id); return; }
   if (voiceSrc && spokenLast === id) return;
   hush(); spokenLast = id; voiceWait = id;
   const play = buf => {
     if (!buf || spokenLast !== id || (voiceSrc && voiceSrc.id === id)) return;
     try{ const src = a.createBufferSource(), g = a.createGain(); g.gain.value = 1.2; src.buffer = buf; src.id = id; src.connect(g).connect(a.destination);
-      src.onended = () => { if (voiceSrc !== src) return; voiceSrc = null; const q = voiceQ; voiceQ = null; if (q) voice(q); };
+      src.onended = () => { if (voiceSrc !== src) return; voiceSrc = null; nextVoice(); };
       src.start(); voiceSrc = src; }catch(e){}
   };
   if (!(id in REC)) REC[id] = fetch('voice/' + id + '.mp3').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
@@ -408,7 +410,7 @@ function voice(id, queue){
   REC[id].then(buf => {
     if (voiceWait === id) voiceWait = null;
     if (buf) return play(buf);
-    if (spokenLast === id && voiceQ){ const q = voiceQ; voiceQ = null; voice(q); }
+    if (spokenLast === id) nextVoice();
   });
 }
 
