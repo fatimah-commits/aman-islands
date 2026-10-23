@@ -1704,11 +1704,17 @@ function showTitle(){
     <div class="bottom"><button class="btn go big glow" id="play" style="font-size:1.6rem;padding:14px 40px">ابدئي المغامرة ✨</button>
     <div class="topics">${ISL.map((d, i) => `<span style="border-color:${d.css};box-shadow:0 3px 0 ${d.css}">${d.icon} ${d.sub}</span>`).join('')}</div></div></div>
     <div class="credit corner"><img src="${LOGO}" alt="المؤسسة العامة للتدريب التقني والمهني"><span>مشروع طالبات</span></div>`, false);
+  // the welcome plays as soon as the page opens; where the browser holds sound back until a touch, the first touch anywhere starts it
+  let welcomed = false;
+  const welcome = () => { if (welcomed || mode !== 'title') return; welcomed = true; voice('g0'); };
+  const a0 = ac(); if (a0) a0.resume().then(() => { if (a0.state === 'running') welcome(); }).catch(() => {});
+  const firstTouch = () => { removeEventListener('pointerdown', firstTouch, true); ac(); welcome(); };
+  addEventListener('pointerdown', firstTouch, true);
   $('#play').onclick = async () => {
     const b = $('#play'); if (b.disabled) return;
     startMusic(); sfx.win();
     // the welcome is heard on the title screen every time; the next screen opens once it ends
-    b.disabled = true; voice('g0');
+    b.disabled = true; welcome();
     const t0 = Date.now();
     await new Promise(ok => { const f = () => ((!voiceSrc && !voiceWait && Date.now() - t0 > 400) || Date.now() - t0 > 8000) ? ok() : setTimeout(f, 100); f(); });
     b.disabled = false; if (S.name) showMap(); else showSetup();
