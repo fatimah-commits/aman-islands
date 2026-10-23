@@ -1764,7 +1764,7 @@ async function showMap(first){
   }
   if (mode !== 'map') return;
   if (nextI >= 0) mission('👆', nextI === 0 ? 'يلا اضغطي على أول جزيرة 🔑' : `كفو! اضغطي على الجزيرة اللي بعدها ${ISL[nextI].icon}`, 0, 0, 'low');
-  else mission('🧩', S.quiz ? 'خلّصتِ كل شي! شوفي شهادتك 🏆' : 'خلّصتِ الجزر! جربي تحدي المراجعة', 0, 0, 'low');
+  else mission('🧩', S.quiz ? 'مبروك! خلّصتِ كل شي، اضغطي على الشهادة 🏆' : 'كفو! خلّصتِ الجزر، اضغطي على تحدي المراجعة 🧩', 0, 0, 'low');
 }
 function enterLevel(i){
   startMusic(); sfx.whoosh();
