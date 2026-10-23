@@ -1797,7 +1797,9 @@ async function finish(i, stars, rule, parent){
   player.userData.jump = true;
   every(() => { player.position.y = Math.abs(Math.sin(T * 6)) * .6; player.rotation.y += .05; st.rotation.y += .04; st.position.y = to.y + Math.sin(T * 3) * .2; if (Math.random() < .3) sparkleAt(st.position, 0xffe080); });
   await wait(.9);
-  const nextI = S.stars.findIndex(n => n === 0);
+  // the next unfinished island; once all are done, the one after this (the review comes after the last island)
+  let nextI = S.stars.findIndex(n => n === 0);
+  if (nextI < 0 && i < ISL.length - 1) nextI = i + 1;
   const msg = stars === 3 ? 'رهيبة يا {n}!' : stars === 2 ? 'أحسنتِ يا {n}!' : 'حلو يا {n}! جربي مرة ثانية';
   panel(`<div class="card">
     <h2>${msg.replace('{n}', esc(S.name))}</h2>
