@@ -1750,7 +1750,7 @@ async function showMap(first){
   const done = S.stars.every(n => n > 0);
   const p = panel(`<div class="mapbar">
       <span class="chip">⭐ ${AR(total())} / ١٢</span><span class="chip">✨ ${AR(S.gems || 0)}</span>
-      ${done ? `<button class="btn go" id="quiz">🧩 تحدي المراجعة</button>${S.quiz ? '<button class="btn go" id="cert">🏆 الشهادة</button>' : ''}` : ''}
+      ${done ? `<button class="btn go${S.quiz ? '' : ' glow'}" id="quiz">🧩 تحدي المراجعة</button>${S.quiz ? '<button class="btn go glow" id="cert">🏆 الشهادة</button>' : ''}` : ''}
       <button class="ibtn" id="who" aria-label="تغيير الشخصية">👧</button>
       <button class="ibtn" id="set" aria-label="الإعدادات">⚙️</button></div>`, false);
   p.style.pointerEvents = 'none';
@@ -1764,7 +1764,13 @@ async function showMap(first){
   }
   if (mode !== 'map') return;
   if (nextI >= 0) mission('👆', nextI === 0 ? 'يلا اضغطي على أول جزيرة 🔑' : `كفو! اضغطي على الجزيرة اللي بعدها ${ISL[nextI].icon}`, 0, 0, 'low');
-  else mission('🧩', S.quiz ? 'مبروك! خلّصتِ كل شي، اضغطي على الشهادة 🏆' : 'كفو! خلّصتِ الجزر، اضغطي على تحدي المراجعة 🧩', 0, 0, 'low');
+  else {
+    // the button to tap glows; the narrator says the part he recorded
+    const t = S.quiz ? 'مبروك! صرتِ بطلة الأمان الرقمي 🏆 اضغطي على الشهادة' : 'كفو! خلّصتِ الجزر 🧩 اضغطي على تحدي المراجعة';
+    const fresh = !saidMissions.has(t);
+    mission(S.quiz ? '🏆' : '🧩', t, 0, 0, 'low');
+    if (fresh) voice(S.quiz ? 'n76' : 'g6', true);
+  }
 }
 function enterLevel(i){
   startMusic(); sfx.whoosh();
