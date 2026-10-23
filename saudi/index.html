@@ -388,6 +388,7 @@ let SAY_ID = null;
 function speak(t, queue){
   if (!SAY_ID){ SAY_ID = {}; (window.VOICE_LINES || []).forEach(g => g[3].forEach(([id, txt]) => { SAY_ID[norm(txt)] = id; })); }
   const id = SAY_ID[norm(t)]; if (id) voice(id, queue);
+  return id;
 }
 const hush = () => { voiceQ = []; try{ if (voiceSrc) voiceSrc.stop(); }catch(e){} voiceSrc = null; };
 /* the characters speak with real recorded voices: voice/<id>.mp3 (lines.js lists them).
@@ -397,8 +398,11 @@ const voiceDone = (max = 7) => { const t0 = T; return waitUntil(() => (!voiceSrc
 // lines waiting their turn, played in order
 let voiceQ = [], voiceWait = null;
 const nextVoice = () => { const [q, ...rest] = voiceQ; voiceQ = []; if (q){ voice(q); voiceQ = rest; } };
+// lines that tell her right or wrong; a person who starts talking waits for these ('polite') but cuts anything else
+const FEEDBACK = new Set();
 function voice(id, queue){
   const a = ac(); if (!a || !id) return;
+  if (queue === 'polite') queue = [voiceSrc && voiceSrc.id, voiceWait, ...voiceQ].some(x => FEEDBACK.has(x));
   if (queue && (voiceSrc || voiceWait)){ if (spokenLast !== id && !voiceQ.includes(id)) voiceQ.push(id); return; }
   if (voiceSrc && spokenLast === id) return;
   hush(); spokenLast = id; voiceWait = id;
@@ -1367,7 +1371,7 @@ function puff(pos, color = 0xffffff, n = 12){
 }
 let toastT = null;
 function toast(text, kind = '', answer = false){
-  speak(text, answer);
+  const id = speak(text, answer); if (answer && id) FEEDBACK.add(id);
   const t = $('#toast'); t.className = kind + (answer ? ' answer' : ''); t.hidden = false;
   // after a choice, say plainly whether it was the right answer, then why
   if (answer) t.innerHTML = `<b class="ah">${kind === 'good' ? '✓ جوابك صح!' : '✗ جوابك غلط'}</b>${esc(text)}`;
@@ -1398,7 +1402,7 @@ function dialog(who, name, text, choices, kind = ''){
     const full = text.replaceAll('{name}', S.name);
     const p = $('#dText'); let n = 0; p.textContent = '';
     const typer = every(dt => { n = Math.min(full.length, n + dt * 50); p.textContent = full.slice(0, Math.ceil(n)); if (n >= full.length) off(typer); });
-    speak((kind === 'good' ? 'صح! ' : kind === 'bad' ? 'لا! ' : '') + full, true);
+    speak((kind === 'good' ? 'صح! ' : kind === 'bad' ? 'لا! ' : '') + full, 'polite');
     $('#dSpeak').onclick = () => speak(full, true);
     const ch = $('#dCh'); ch.innerHTML = '';
     const close = i => { off(typer); d.hidden = true; busy = false; sfx.click(); hush(); res(i); };
@@ -1908,7 +1912,7 @@ async function levelTreasure(){
     people.push(n);
     n.act = addAct(n.model, 1.8, async () => {
       face(n.model, player.position.x, player.position.z); face(player, n.model.position.x, n.model.position.z);
-      voice(v.vid, true);
+      voice(v.vid, 'polite');
       const c = await ask(v.who, v.name, v.say, ['🤐 لا، سر!', '🔑 أقولها']);
       const ok = (c === 1) === v.ok;
       if (ok) right(); else mistake();
@@ -2166,7 +2170,7 @@ async function levelMountain(){
     scene.remove(env); sfx.pop(); busy = false;
     mission(m.friend ? '💗' : '✉️', `<small>رسالة من ${esc(m.from)}</small>"${esc(m.t)}"`, i + 1, MSGS.length);
     speak(`رسالة من ${m.from}: ${m.t}. امشي للمنصة الصح.`);
-    if (m.friend){ voice('m2i', true); voice('m2', true); } else voice('m' + (i + 1), true);
+    if (m.friend){ voice('m2i', 'polite'); voice('m2', true); } else voice('m' + (i + 1), 'polite');
     let ok = false, picked = null;
     while (!ok){
       let on = null;
